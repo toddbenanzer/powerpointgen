@@ -310,3 +310,83 @@ The `shape_ref` argument in styling methods can be:
 *   `set_shape_fill_color(shape_ref, r, g, b)`
 *   `set_shape_line_color(shape_ref, r, g, b)`
 *   `set_shape_line_weight(shape_ref, weight_pt)`
+
+### Adding Charts
+
+You can add common chart types like line and bar charts to your slides using data from Python dictionaries.
+
+**Method: `PySlide.add_chart()`**
+
+The `add_chart` method on a `PySlide` object allows you to insert charts.
+
+**Parameters:**
+
+*   `chart_type` (`XL_CHART_TYPE`): The type of chart to create (e.g., `XL_CHART_TYPE.LINE`, `XL_CHART_TYPE.COLUMN_CLUSTERED`). You'll need to import this enum: `from pptx.enum.chart import XL_CHART_TYPE`.
+*   `chart_data_dict` (dict): A dictionary containing the data for the chart. It must have the following structure:
+    ```python
+    {
+        'categories': ['Category 1', 'Category 2', 'Category 3'], # List of category labels (X-axis)
+        'series': [ # List of series, each series is a dictionary
+            {'name': 'Series A Name', 'values': [10.5, 20.2, 15.7]},
+            {'name': 'Series B Name', 'values': [12.0, 18.5, 19.2]}
+            # Add more series as needed
+        ]
+    }
+    ```
+    The length of `values` in each series must match the length of the `categories` list.
+*   `left`, `top`, `width`, `height` (float): Position and dimensions of the chart on the slide, in Inches.
+*   `chart_title` (str, optional): An optional title for the chart.
+
+The method returns the `GraphicFrame` object containing the chart.
+
+**Example: Adding a Line Chart**
+
+```python
+from pptx.enum.chart import XL_CHART_TYPE
+# Assuming 'slide' is a PySlide object
+
+line_chart_data = {
+    'categories': ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
+    'series': [
+        {'name': 'Product A Sales', 'values': [100, 120, 90, 110, 130]},
+        {'name': 'Product B Sales', 'values': [80, 85, 100, 95, 105]}
+    ]
+}
+
+try:
+    line_chart_frame = slide.add_chart(
+        XL_CHART_TYPE.LINE,
+        line_chart_data,
+        left=1, top=2, width=8, height=4, # Inches
+        chart_title="Monthly Product Sales (Line Chart)"
+    )
+    print("Line chart added to the slide.")
+except ValueError as e:
+    print(f"Error adding line chart: {e}")
+```
+
+**Example: Adding a Clustered Column Chart**
+
+```python
+# from pptx.enum.chart import XL_CHART_TYPE # Already imported
+# Assuming 'slide' is a PySlide object
+
+column_chart_data = {
+    'categories': ['Q1', 'Q2', 'Q3', 'Q4'],
+    'series': [
+        {'name': 'Region North', 'values': [250, 260, 280, 270]},
+        {'name': 'Region South', 'values': [220, 230, 210, 240]}
+    ]
+}
+
+try:
+    column_chart_frame = slide.add_chart(
+        XL_CHART_TYPE.COLUMN_CLUSTERED,
+        column_chart_data,
+        left=1, top=2, width=8, height=4, # Inches
+        chart_title="Quarterly Regional Performance (Column Chart)"
+    )
+    print("Column chart added to the slide.")
+except ValueError as e:
+    print(f"Error adding column chart: {e}")
+```

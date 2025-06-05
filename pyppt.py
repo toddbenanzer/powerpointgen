@@ -1,5 +1,7 @@
 from pptx import Presentation
 from pptx.enum.shapes import PP_PLACEHOLDER, MSO_SHAPE
+from pptx.enum.chart import XL_CHART_TYPE
+from pptx.chart.data import CategoryChartData
 from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
 import pandas as pd
@@ -347,6 +349,79 @@ class PySlide:
         shape = self._get_shape(shape_ref)
         shape.line.width = Pt(weight_pt)
         # Setting width usually makes the line visible if it had 'no line' previously.
+
+    def add_chart(self, chart_type, chart_data_dict, left, top, width, height, chart_title=None):
+        """Adds a chart to the slide.
+
+        Args:
+            chart_type (XL_CHART_TYPE): Type of chart (e.g., XL_CHART_TYPE.LINE).
+            chart_data_dict (dict): Data for the chart. Expected structure:
+                {
+                    'categories': ['Cat1', 'Cat2', ...],
+                    'series': [
+                        {'name': 'Series1 Name', 'values': [val1, val2, ...]},
+                        {'name': 'Series2 Name', 'values': [valA, valB, ...]}
+                    ]
+                }
+            left (float): Left position of the chart (Inches).
+            top (float): Top position of the chart (Inches).
+            width (float): Width of the chart (Inches).
+            height (float): Height of the chart (Inches).
+            chart_title (str, optional): Title for the chart.
+
+        Returns:
+            pptx.shapes.graphfrm.GraphicFrame: The graphic frame containing the chart.
+
+        Raises:
+            ValueError: If chart_data_dict structure is invalid.
+        """
+        # Validate chart_data_dict structure
+        if not isinstance(chart_data_dict, dict):
+            raise ValueError("chart_data_dict must be a dictionary.")
+        if 'categories' not in chart_data_dict or not isinstance(chart_data_dict['categories'], list):
+            raise ValueError("chart_data_dict must contain a 'categories' list.")
+        if 'series' not in chart_data_dict or not isinstance(chart_data_dict['series'], list):
+            raise ValueError("chart_data_dict must contain a 'series' list.")
+        if not chart_data_dict['series']: # Check if series list is empty
+             raise ValueError("chart_data_dict['series'] list cannot be empty.")
+        for s in chart_data_dict['series']:
+            if not isinstance(s, dict) or 'name' not in s or 'values' not in s:
+                raise ValueError("Each item in 'series' must be a dict with 'name' and 'values'.")
+            if not isinstance(s['values'], list):
+                raise ValueError("Each series 'values' must be a list.")
+            if len(s['values']) != len(chart_data_dict['categories']):
+                raise ValueError(
+                    f"Series '{s['name']}' has {len(s['values'])} values, "
+                    f"but there are {len(chart_data_dict['categories'])} categories."
+                )
+
+        chart_data = CategoryChartData()
+        chart_data.categories = chart_data_dict['categories']
+
+        for series_item in chart_data_dict['series']:
+            chart_data.add_series(series_item['name'], series_item['values'])
+
+        graphic_frame = self.pptx_slide.shapes.add_chart(
+            chart_type,
+            Inches(left), Inches(top),
+            Inches(width), Inches(height),
+            chart_data
+        )
+
+        chart = graphic_frame.chart
+
+        if chart_title:
+            chart.has_title = True
+            chart.chart_title.text_frame.text = chart_title
+        else:
+            chart.has_title = False
+
+        if len(chart_data_dict['series']) > 1:
+            chart.has_legend = True
+        else:
+            chart.has_legend = False
+
+        return graphic_frame
 
 class PyPPT:
     def __init__(self, pptx_path=None):

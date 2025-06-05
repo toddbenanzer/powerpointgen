@@ -1,6 +1,7 @@
 from pyppt import PyPPT
 import pandas as pd
 from pptx.enum.shapes import MSO_SHAPE
+from pptx.enum.chart import XL_CHART_TYPE
 
 # --- Create a new presentation ---
 print("Creating a new presentation...")
@@ -288,6 +289,83 @@ shape_slide.set_shape_line_color(line_shape, r=0, g=0, b=0) # Black
 shape_slide.set_shape_line_weight(line_shape, weight_pt=2)
 
 print("Shape styling applied.")
+
+
+# --- Demonstrating Adding Charts ---
+print("\n--- Demonstrating Adding Charts ---")
+
+# Get a slide to add charts to, or create a new one
+if not new_preso.slides:
+    print("Adding a new slide for chart examples...")
+    try:
+        chart_slide = new_preso.add_slide(layout_ref="Blank")
+    except ValueError:
+        print("Layout 'Blank' not found, using default layout for chart slide.")
+        chart_slide = new_preso.add_slide() # Default layout as fallback
+    try:
+        chart_slide.set_title("Chart Examples")
+    except AttributeError:
+        print("INFO: Chart slide's layout has no title placeholder.")
+else:
+    # Add charts to a new slide to keep examples clean, even if other slides exist
+    print("Adding a new slide for chart examples...")
+    try:
+        # Try to use a layout often suitable for content + title
+        chart_slide = new_preso.add_slide(layout_ref="Title and Content")
+    except ValueError:
+        print("Layout 'Title and Content' not found, using default layout for chart slide.")
+        chart_slide = new_preso.add_slide() # Default layout as fallback
+    try:
+        chart_slide.set_title("Chart Demonstrations")
+    except AttributeError:
+         print(f"INFO: Layout '{chart_slide.pptx_slide.slide_layout.name}' might not have a title placeholder.")
+
+
+# Example 1: Line Chart
+print("Preparing data for a Line Chart...")
+line_chart_data = {
+    'categories': ['Q1 Sales', 'Q2 Sales', 'Q3 Sales', 'Q4 Sales'],
+    'series': [
+        {'name': 'Product Alpha', 'values': [150, 200, 180, 220]},
+        {'name': 'Product Beta', 'values': [120, 170, 160, 190]}
+    ]
+}
+try:
+    print("Adding a Line Chart...")
+    line_chart_graphic_frame = chart_slide.add_chart(
+        XL_CHART_TYPE.LINE,
+        line_chart_data,
+        left=0.5, top=1.5, width=4.5, height=2.5, # Inches
+        chart_title="Product Sales Trends (Line)"
+    )
+    print("Line Chart added.")
+except ValueError as e:
+    print(f"Error adding Line Chart: {e}")
+except Exception as e:
+    print(f"An unexpected error occurred while adding Line Chart: {e}")
+
+# Example 2: Clustered Column Chart
+print("\nPreparing data for a Clustered Column Chart...")
+column_chart_data = {
+    'categories': ['North', 'South', 'East', 'West'],
+    'series': [
+        {'name': 'Y2022', 'values': [2500, 3200, 1800, 2900]},
+        {'name': 'Y2023', 'values': [2800, 3000, 2000, 3100]}
+    ]
+}
+try:
+    print("Adding a Clustered Column Chart...")
+    column_chart_graphic_frame = chart_slide.add_chart(
+        XL_CHART_TYPE.COLUMN_CLUSTERED,
+        column_chart_data,
+        left=5.0, top=1.5, width=4.5, height=2.5, # Adjusted left to avoid overlap
+        chart_title="Regional Performance (Column)"
+    )
+    print("Clustered Column Chart added.")
+except ValueError as e:
+    print(f"Error adding Clustered Column Chart: {e}")
+except Exception as e:
+    print(f"An unexpected error occurred while adding Clustered Column Chart: {e}")
 
 
 print("\nAttempting to set slide numbers visibility (True)...")
