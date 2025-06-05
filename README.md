@@ -193,17 +193,39 @@ number_formatting = {
     'quantity_sold': ',d'  # Format as integer with comma separator
 }
 
-# Add the DataFrame as a table to the slide
+# Define styling options
+font_options = {
+    'font_name': 'Arial',
+    'font_size': 10
+}
+header_style_options = {
+    'header_bold': True,
+    'header_font_color_rgb': (255, 255, 255), # White text
+    'header_fill_color_rgb': (79, 129, 189)  # A common blue shade
+}
+# Example column widths (first column for index, others for df.columns)
+# Assumes df has 4 columns, and index is included, total 5 columns in table.
+# The method converts these floats to Inches internally.
+col_widths_example = [1.5, 2.0, 1.0, 1.5, 2.0]
+
+
+# Add the DataFrame as a table to the slide with styling
 try:
     table_shape = slide.add_table_from_dataframe(
         dataframe=df,
-        left=0.5, top=2.0, width=9.0, height=1.5, # Position and size in Inches
+        left=0.5, top=2.0, width=9.0, height=1.5, # Position and size
         column_labels=custom_labels,
         number_formats=number_formatting,
         include_index=True,
-        index_label="Sales ID"
+        index_label="Sales ID",
+        font_name=font_options['font_name'],
+        font_size=font_options['font_size'],
+        header_bold=header_style_options['header_bold'],
+        header_font_color_rgb=header_style_options['header_font_color_rgb'],
+        header_fill_color_rgb=header_style_options['header_fill_color_rgb'],
+        column_widths=col_widths_example
     )
-    print("DataFrame table added to the slide.")
+    print("DataFrame table with custom styling added to the slide.")
 except Exception as e:
     print(f"Error adding DataFrame table: {e}")
 ```
@@ -216,5 +238,12 @@ except Exception as e:
 *   `number_formats` (dict, optional): A dictionary mapping original DataFrame column names to Python format strings (e.g., `{'price_col': '$,.2f'}`). Applied to cell values.
 *   `include_index` (bool, optional): If `True`, includes the DataFrame's index as the first column. Defaults to `False`.
 *   `index_label` (str, optional): If `include_index` is `True`, this string is used as the header for the index column. Defaults to the DataFrame's index name or "Index".
+*   `font_name` (str, optional): Font name for all text in the table (e.g., "Arial").
+*   `font_size` (int, optional): Font size in points for all text in the table (e.g., 10).
+*   `column_widths` (list or dict, optional): List of widths (Inches) for columns by index, or a dict mapping column index to width.
+*   `row_heights` (list or dict, optional): List of heights (Inches) for rows by index, or a dict mapping row index to height.
+*   `header_bold` (bool, optional): If `True` (default), makes header text bold.
+*   `header_font_color_rgb` (tuple, optional): An RGB tuple (e.g., `(255, 255, 255)` for white) for header text color.
+*   `header_fill_color_rgb` (tuple, optional): An RGB tuple (e.g., `(0, 0, 0)` for black) for header row background fill.
 
 The method returns the `GraphicFrame` object representing the table.

@@ -1,6 +1,7 @@
 from pptx import Presentation
 from pptx.enum.shapes import PP_PLACEHOLDER
-from pptx.util import Inches
+from pptx.util import Inches, Pt
+from pptx.dml.color import RGBColor
 import pandas as pd
 
 class PySlide:
@@ -110,26 +111,35 @@ class PySlide:
 
     def add_table_from_dataframe(self, dataframe, left, top, width, height,
                                  column_labels=None, number_formats=None,
-                                 include_index=False, index_label=None):
-        """Adds a table to the slide populated from a Pandas DataFrame.
+                                 include_index=False, index_label=None,
+                                 font_name=None, font_size=None,
+                                 column_widths=None,
+                                 row_heights=None,
+                                 header_bold=True,
+                                 header_font_color_rgb=None,
+                                 header_fill_color_rgb=None
+                                 ):
+        """Adds a table to the slide populated from a Pandas DataFrame with styling.
 
         Args:
             dataframe (pd.DataFrame): The Pandas DataFrame to display.
-            left (float): The left position of the table (in Inches).
-            top (float): The top position of the table (in Inches).
-            width (float): The width of the table (in Inches).
-            height (float): The height of the table (in Inches).
-            column_labels (dict, optional): Maps original DataFrame column names
-                                          to custom display names for the table header.
-                                          e.g., {'col_df_name': 'Display Name'}
-            number_formats (dict, optional): Maps original DataFrame column names
-                                           to Python format strings for cell values.
-                                           e.g., {'price_col': '$,.2f', 'qty_col': ',d'}
-            include_index (bool): If True, include the DataFrame's index as the
-                                  first column. Defaults to False.
-            index_label (str, optional): Header for the index column if
-                                       include_index is True. Defaults to DataFrame's
-                                       index name or "Index".
+            left (float): Left position of the table (Inches).
+            top (float): Top position of the table (Inches).
+            width (float): Width of the table (Inches).
+            height (float): Height of the table (Inches).
+            column_labels (dict, optional): Maps DataFrame column names to display names.
+            number_formats (dict, optional): Maps DataFrame column names to format strings.
+            include_index (bool): True to include DataFrame index as first column.
+            index_label (str, optional): Header for the index column.
+            font_name (str, optional): Font name for table text (e.g., "Arial").
+            font_size (int, optional): Font size for table text (in Points, e.g., 10).
+            column_widths (list|dict, optional): List or dict of column widths in Inches.
+                                               If list, applied by index. If dict, by col_idx.
+            row_heights (list|dict, optional): List or dict of row heights in Inches.
+                                             If list, applied by index. If dict, by row_idx.
+            header_bold (bool): True to make header text bold. Defaults to True.
+            header_font_color_rgb (tuple, optional): RGB tuple for header font color (e.g., (255,255,255)).
+            header_fill_color_rgb (tuple, optional): RGB tuple for header cell fill color (e.g., (0,0,0)).
         Returns:
             pptx.shapes.graphfrm.GraphicFrame: The table shape object.
         """
@@ -195,6 +205,52 @@ class PySlide:
 
                 table.cell(i + 1, current_cell_idx_in_row).text = formatted_value
                 current_cell_idx_in_row += 1
+
+        # --- Apply Table-wide Font Styling ---
+        if font_name or font_size:
+            for row in table.rows:
+                for cell in row.cells:
+                    for paragraph in cell.text_frame.paragraphs:
+                        if font_name:
+                            paragraph.font.name = font_name
+                        if font_size:
+                            paragraph.font.size = Pt(font_size)
+
+        # --- Apply Column Widths ---
+        if column_widths:
+            if isinstance(column_widths, list):
+                for i, cw_val in enumerate(column_widths):
+                    if i < len(table.columns):
+                        table.columns[i].width = Inches(cw_val)
+            elif isinstance(column_widths, dict):
+                for col_idx, cw_val in column_widths.items():
+                    if col_idx < len(table.columns):
+                        table.columns[col_idx].width = Inches(cw_val)
+
+        # --- Apply Row Heights ---
+        if row_heights:
+            if isinstance(row_heights, list):
+                for i, rh_val in enumerate(row_heights):
+                    if i < len(table.rows):
+                        table.rows[i].height = Inches(rh_val)
+            elif isinstance(row_heights, dict):
+                for row_idx, rh_val in row_heights.items():
+                    if row_idx < len(table.rows):
+                        table.rows[row_idx].height = Inches(rh_val)
+
+        # --- Style Header Row ---
+        for col_idx in range(len(table.columns)):
+            cell = table.cell(0, col_idx) # Header row is index 0
+
+            for paragraph in cell.text_frame.paragraphs:
+                if header_bold:
+                    paragraph.font.bold = True
+                if header_font_color_rgb:
+                    paragraph.font.color.rgb = RGBColor(*header_font_color_rgb)
+
+            if header_fill_color_rgb:
+                cell.fill.solid()
+                cell.fill.fore_color.rgb = RGBColor(*header_fill_color_rgb)
 
         return table_shape
 

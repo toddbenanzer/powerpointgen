@@ -153,26 +153,46 @@ number_formats_for_table = {
     'Quantity': ',d'
 }
 
+# Define some styling options
+table_font_name = 'Calibri'
+table_font_size = 10
+num_df_columns = len(df_sample.columns)
+example_col_widths = [1.5] + [1.0] * num_df_columns # Widths in Inches
+
+header_custom_style = {
+    'header_bold': True,
+    'header_font_color_rgb': (255, 255, 255), # White
+    'header_fill_color_rgb': (31, 73, 125)    # A dark blue
+}
+
 try:
-    print("\nAdding DataFrame to slide...")
+    print("\nAdding DataFrame to slide with custom styling...")
     # Determine slide index for print message
     slide_idx_for_msg = "N/A"
     for idx, s_wrapper in enumerate(new_preso.slides):
-        if s_wrapper.pptx_slide == table_slide.pptx_slide:
+        if s_wrapper.pptx_slide == table_slide.pptx_slide: # Compare actual pptx_slide objects
             slide_idx_for_msg = idx
             break
 
     table_shape = table_slide.add_table_from_dataframe(
         dataframe=df_sample,
-        left=1, top=3, width=8, height=1.5, # Adjusted top position based on typical slide content
+        left=1, top=3, width=8, height=1.5, # Adjusted top position, ensure width accommodates columns
         column_labels=custom_headers,
         number_formats=number_formats_for_table,
         include_index=True,
-        index_label='Product'
+        index_label='Product',
+
+        # New styling options
+        font_name=table_font_name,
+        font_size=table_font_size,
+        column_widths=example_col_widths,
+        header_bold=header_custom_style['header_bold'],
+        header_font_color_rgb=header_custom_style['header_font_color_rgb'],
+        header_fill_color_rgb=header_custom_style['header_fill_color_rgb']
     )
-    print(f"DataFrame table added to slide index {slide_idx_for_msg}.")
+    print(f"Styled DataFrame table added to slide index {slide_idx_for_msg}.")
 except Exception as e:
-    print(f"Error adding DataFrame table to slide: {e}")
+    print(f"Error adding styled DataFrame table to slide: {e}")
 
 
 print("\nAttempting to set slide numbers visibility (True)...")
