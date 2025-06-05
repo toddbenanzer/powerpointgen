@@ -11,6 +11,12 @@ To install the necessary dependencies, run:
 pip install -r requirements.txt
 ```
 
+**Note on Importing Enums:**
+Common `python-pptx` enums needed for certain operations, like `MSO_SHAPE` (for adding shapes), `XL_CHART_TYPE` (for adding charts), and `PP_PLACEHOLDER` (relevant for understanding slide structure if customizing layouts or dealing with placeholders directly), are re-exported for convenience. You can import them directly from `pyppt`:
+```python
+from pyppt import PyPPT, PySlide, MSO_SHAPE, XL_CHART_TYPE, PP_PLACEHOLDER
+```
+
 ### Basic Usage
 
 Here's how to create a new presentation, add a slide, and save it:
@@ -390,3 +396,59 @@ try:
 except ValueError as e:
     print(f"Error adding column chart: {e}")
 ```
+
+### Presentation and Slide Management
+
+The `PyPPT` object provides methods to manage slides within the presentation.
+
+**Deleting a Slide**
+
+You can delete a slide by its index:
+
+```python
+# Assuming 'preso' is a PyPPT object
+# Example: Delete the slide currently at index 2
+try:
+    preso.delete_slide(2)
+    print("Slide at index 2 deleted.")
+except IndexError as e:
+    print(e)
+```
+*Note: This operation directly modifies the presentation structure and should be used with awareness of `python-pptx` internal behaviors.*
+
+**Moving a Slide**
+
+Reorder slides within the presentation:
+
+```python
+# Assuming 'preso' is a PyPPT object with at least 3 slides
+# Example: Move the slide currently at index 0 to be at index 2
+try:
+    preso.move_slide(current_index=0, new_index=2)
+    print("Moved slide from index 0 to index 2.")
+except IndexError as e:
+    print(e) # If current_index is invalid
+```
+*The `new_index` is handled robustly; if out of bounds, it's adjusted to be within valid insertion points (e.g., negative becomes 0, too large appends).*
+
+**Duplicating a Slide (Basic Implementation)**
+
+Create a copy of an existing slide. The new slide is added at the end of the presentation.
+
+```python
+# Assuming 'preso' is a PyPPT object with at least one slide
+try:
+    duplicated_slide_wrapper = preso.duplicate_slide(0) # Duplicate the first slide
+    print(f"Slide at index 0 was duplicated. New slide index: {len(preso.slides)-1}")
+    # You can now work with duplicated_slide_wrapper (a PySlide object)
+    # duplicated_slide_wrapper.set_title("Copy of First Slide")
+except IndexError as e:
+    print(e)
+```
+
+**Important Limitations of `duplicate_slide`:**
+This is a basic implementation and does *not* perform a perfect, deep copy.
+*   It copies the layout and attempts to replicate text from common placeholders (title, content - content often becomes new text boxes).
+*   It tries to copy basic auto-shapes (like rectangles, ovals, lines) and their text, position, and size.
+*   **It does NOT copy**: Complex shape formatting, tables, charts, images, grouped shapes, animations, transitions, or slide master details.
+*   For a true clone, more advanced manipulation of the underlying presentation XML would be needed, which is beyond the scope of this basic function.

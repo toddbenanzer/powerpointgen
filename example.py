@@ -1,7 +1,5 @@
-from pyppt import PyPPT
+from pyppt import PyPPT, MSO_SHAPE, XL_CHART_TYPE # Updated imports
 import pandas as pd
-from pptx.enum.shapes import MSO_SHAPE
-from pptx.enum.chart import XL_CHART_TYPE
 
 # --- Create a new presentation ---
 print("Creating a new presentation...")
@@ -366,6 +364,105 @@ except ValueError as e:
     print(f"Error adding Clustered Column Chart: {e}")
 except Exception as e:
     print(f"An unexpected error occurred while adding Clustered Column Chart: {e}")
+
+
+# --- Demonstrating Slide Management ---
+print("\n--- Demonstrating Slide Management ---")
+
+# Helper to print slide titles
+def print_slide_titles(presentation_obj, message="Current slides:"):
+    print(message)
+    if not presentation_obj.slides:
+        print("  (No slides in presentation)")
+        return
+    for i, slide_wrapper in enumerate(presentation_obj.slides):
+        title_text = "(No title placeholder or title not set)"
+        # Check if the shapes collection and title attribute exist, and if title has text
+        if slide_wrapper.pptx_slide.shapes.has_title_placeholder and slide_wrapper.pptx_slide.shapes.title:
+            title_text = slide_wrapper.pptx_slide.shapes.title.text_frame.text or "(Title is empty)"
+        elif slide_wrapper.pptx_slide.placeholders:
+            has_text_placeholder = False
+            for ph_idx, ph in enumerate(slide_wrapper.pptx_slide.placeholders):
+                if ph.has_text_frame and ph.text_frame.text:
+                    title_text = f"(Content Placeholder {ph_idx}: '{ph.text_frame.text[:30]}...') (Slide {i})"
+                    has_text_placeholder = True
+                    break
+            if not has_text_placeholder and slide_wrapper.pptx_slide.shapes: # Check shapes if no text in placeholders
+                 for shape_idx, shape_obj in enumerate(slide_wrapper.pptx_slide.shapes):
+                     if shape_obj.has_text_frame and shape_obj.text_frame.text:
+                         title_text = f"(Shape {shape_idx} Content: '{shape_obj.text_frame.text[:30]}...') (Slide {i})"
+                         break
+
+        print(f"  Slide {i}: {title_text}")
+    print(f"Total slides: {len(presentation_obj.slides)}")
+
+# --- Initial state before slide management ---
+print_slide_titles(new_preso, "State before slide management:")
+
+# --- Demonstrate duplicate_slide ---
+if new_preso.slides:
+    original_slide_count = len(new_preso.slides)
+    slide_to_duplicate_idx = 0
+    print(f"\nAttempting to duplicate slide at index {slide_to_duplicate_idx}...")
+    try:
+        duplicated_slide = new_preso.duplicate_slide(slide_to_duplicate_idx)
+        new_slide_idx = -1
+        for idx, s_wrapper in enumerate(new_preso.slides): # Find the actual index of the new slide
+            if s_wrapper.pptx_slide == duplicated_slide.pptx_slide:
+                new_slide_idx = idx
+                break
+
+        print(f"Slide duplicated. New slide added at index {new_slide_idx}.")
+        try:
+            original_title = "(Original Untitled or No Title Placeholder)"
+            if new_preso.slides[slide_to_duplicate_idx].pptx_slide.shapes.has_title_placeholder and \
+               new_preso.slides[slide_to_duplicate_idx].pptx_slide.shapes.title :
+                original_title = new_preso.slides[slide_to_duplicate_idx].pptx_slide.shapes.title.text_frame.text or original_title
+
+            if duplicated_slide.pptx_slide.shapes.has_title_placeholder and duplicated_slide.pptx_slide.shapes.title:
+               duplicated_slide.set_title(f"DUPLICATED - {original_title[:30]}")
+            else:
+               duplicated_slide.add_text_box(f"DUPLICATED Slide (Original index {slide_to_duplicate_idx})", 0.5, 0.2, 5, 0.5)
+            print(f"Set title/text box for duplicated slide (index {new_slide_idx}).")
+        except Exception as e_title:
+            print(f"Could not set title on duplicated slide: {e_title}")
+        print_slide_titles(new_preso, "State after duplicating slide:")
+    except IndexError as e:
+        print(f"Error duplicating slide: {e}")
+else:
+    print("\nSkipping duplicate_slide demo (no slides).")
+
+# --- Demonstrate move_slide ---
+if len(new_preso.slides) >= 2:
+    slide_to_move_idx = len(new_preso.slides) - 1
+    new_target_idx = 1
+
+    if slide_to_move_idx != new_target_idx : # Ensure it's a meaningful move
+        print(f"\nAttempting to move slide from index {slide_to_move_idx} to {new_target_idx}...")
+        try:
+            new_preso.move_slide(slide_to_move_idx, new_target_idx)
+            print_slide_titles(new_preso, f"State after moving slide from {slide_to_move_idx} to {new_target_idx}:")
+        except IndexError as e:
+            print(f"Error moving slide: {e}")
+    else:
+        print(f"\nSkipping move_slide demo (last slide is already at or would move to target index {new_target_idx}, or not enough slides for distinct move).")
+else:
+    print(f"\nSkipping move_slide demo (need at least 2 slides for a distinct move). Current slides: {len(new_preso.slides)}")
+
+
+# --- Demonstrate delete_slide ---
+if len(new_preso.slides) > 0:
+    slide_to_delete_idx = 0
+    print(f"\nAttempting to delete slide at index {slide_to_delete_idx}...")
+    try:
+        new_preso.delete_slide(slide_to_delete_idx)
+        print_slide_titles(new_preso, f"State after deleting slide at index {slide_to_delete_idx}:")
+    except IndexError as e:
+        print(f"Error deleting slide: {e}")
+else:
+    print("\nSkipping delete_slide demo (no slides).")
+
+print("\nFinished Slide Management Demonstrations.")
 
 
 print("\nAttempting to set slide numbers visibility (True)...")

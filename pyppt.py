@@ -6,6 +6,17 @@ from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
 import pandas as pd
 
+# Re-export enums for easier access by users
+from pptx.enum.shapes import MSO_SHAPE, PP_PLACEHOLDER # Consolidated
+from pptx.enum.chart import XL_CHART_TYPE
+
+__all__ = ['PyPPT', 'PySlide', 'MSO_SHAPE', 'XL_CHART_TYPE', 'PP_PLACEHOLDER']
+
+# Default values for method parameters
+DEFAULT_LAYOUT_REF = 5
+DEFAULT_TABLE_HEADER_BOLD = True
+DEFAULT_TABLE_INCLUDE_INDEX = False
+
 class PySlide:
     def __init__(self, pptx_slide):
         """Initializes the PySlide.
@@ -113,11 +124,11 @@ class PySlide:
 
     def add_table_from_dataframe(self, dataframe, left, top, width, height,
                                  column_labels=None, number_formats=None,
-                                 include_index=False, index_label=None,
+                                 include_index=DEFAULT_TABLE_INCLUDE_INDEX, index_label=None,
                                  font_name=None, font_size=None,
                                  column_widths=None,
                                  row_heights=None,
-                                 header_bold=True,
+                                 header_bold=DEFAULT_TABLE_HEADER_BOLD,
                                  header_font_color_rgb=None,
                                  header_fill_color_rgb=None
                                  ):
@@ -131,7 +142,7 @@ class PySlide:
             height (float): Height of the table (Inches).
             column_labels (dict, optional): Maps DataFrame column names to display names.
             number_formats (dict, optional): Maps DataFrame column names to format strings.
-            include_index (bool): True to include DataFrame index as first column.
+            include_index (bool): True to include DataFrame index as first column. Defaults to DEFAULT_TABLE_INCLUDE_INDEX.
             index_label (str, optional): Header for the index column.
             font_name (str, optional): Font name for table text (e.g., "Arial").
             font_size (int, optional): Font size for table text (in Points, e.g., 10).
@@ -139,7 +150,7 @@ class PySlide:
                                                If list, applied by index. If dict, by col_idx.
             row_heights (list|dict, optional): List or dict of row heights in Inches.
                                              If list, applied by index. If dict, by row_idx.
-            header_bold (bool): True to make header text bold. Defaults to True.
+            header_bold (bool): True to make header text bold. Defaults to DEFAULT_TABLE_HEADER_BOLD.
             header_font_color_rgb (tuple, optional): RGB tuple for header font color (e.g., (255,255,255)).
             header_fill_color_rgb (tuple, optional): RGB tuple for header cell fill color (e.g., (0,0,0)).
         Returns:
@@ -432,13 +443,13 @@ class PyPPT:
         # Store the path if provided, though it's less relevant if creating new
         self.pptx_path = pptx_path
 
-    def add_slide(self, layout_ref=5): # Default is often 'Title and Content' by index
+    def add_slide(self, layout_ref=DEFAULT_LAYOUT_REF):
         """Adds a new slide to the presentation and returns its PySlide wrapper.
 
         Args:
             layout_ref (int or str): The index of the slide layout to use (int)
                                      or the name of the slide layout (str).
-                                     Defaults to index 5.
+                                     Defaults to DEFAULT_LAYOUT_REF.
 
         Returns:
             PySlide: A wrapper for the newly added slide.
@@ -499,6 +510,151 @@ class PyPPT:
     def slides(self):
         """Returns a list of PySlide instances for all slides in the presentation."""
         return [PySlide(s) for s in self.presentation.slides]
+
+    def delete_slide(self, slide_index):
+        """Deletes a slide from the presentation by its index.
+
+        Args:
+            slide_index (int): The index of the slide to delete.
+
+        Raises:
+            IndexError: If slide_index is out of range.
+
+        Note: This method manipulates internal structures of python-pptx
+              and should be used with caution.
+        """
+        # Use len(self.presentation.slides) for public API consistency if available
+        # but _sldIdLst is the direct list being manipulated.
+        num_slides_in_list = len(self.presentation.slides._sldIdLst)
+        if not 0 <= slide_index < num_slides_in_list:
+            raise IndexError(f"Slide index {slide_index} is out of range. "
+                             f"Presentation has {num_slides_in_list} slides (indices 0 to {num_slides_in_list-1}).")
+
+        prs = self.presentation
+
+        slide_id_entry = prs.slides._sldIdLst[slide_index]
+        rId = slide_id_entry.rId
+
+        prs.part.drop_rel(rId)
+        del prs.slides._sldIdLst[slide_index]
+
+    def move_slide(self, current_index, new_index):
+        """Moves a slide from its current position to a new position.
+
+        Args:
+            current_index (int): The current index of the slide to move.
+            new_index (int): The target index where the slide should be moved.
+                             If new_index is greater than or equal to the number
+                             of slides (after removal of the slide at current_index),
+                             the slide is moved to the end.
+                             If new_index is less than 0, it's treated as 0.
+
+        Raises:
+            IndexError: If current_index is out of range.
+
+        Note: This method manipulates internal structures of python-pptx.
+        """
+        slides_list = self.presentation.slides._sldIdLst
+        num_slides = len(slides_list)
+
+        if not 0 <= current_index < num_slides:
+            raise IndexError(f"current_index {current_index} is out of range. "
+                             f"Presentation has {num_slides} slides (indices 0 to {num_slides-1}).")
+
+        # Pop the slide ID entry from its current position
+        slide_id_entry_to_move = slides_list.pop(current_index)
+
+        # After pop, the list is one shorter.
+        # Adjust new_index to be within valid bounds for insertion into the modified list.
+        num_slides_after_pop = len(slides_list) # This is num_slides - 1
+
+        if new_index < 0:
+            new_index = 0
+        elif new_index > num_slides_after_pop: # If new_index is beyond the new end of list
+            new_index = num_slides_after_pop   # Clamp to the end (append)
+
+        slides_list.insert(new_index, slide_id_entry_to_move)
+
+    def duplicate_slide(self, slide_index_to_duplicate):
+        """Duplicates a slide by creating a new slide with the same layout
+        and attempting to copy basic content and shapes.
+        The new slide is added at the end of the presentation.
+
+        IMPORTANT LIMITATIONS (Basic Implementation):
+        - Does NOT perform a perfect, deep copy of the slide.
+        - Copies text from the main title placeholder if present on both slides.
+        - For other common placeholders (body, content, text box type), text content
+          is copied into NEW text boxes on the duplicated slide at the same position
+          and size as the original placeholder. It does not attempt to map to
+          existing placeholders on the new slide by index.
+        - Attempts to replicate basic auto-shapes (e.g., RECTANGLE, OVAL, LINE)
+          and their text content, position, and size.
+        - Does NOT copy:
+            - Complex shape formatting (most fill, line, effects will be default).
+            - Tables.
+            - Charts.
+            - Images.
+            - Grouped shapes.
+            - Animations, transitions, or slide master modifications.
+
+        Args:
+            slide_index_to_duplicate (int): The index of the slide to duplicate.
+
+        Returns:
+            PySlide: A PySlide wrapper for the newly created (duplicated) slide.
+
+        Raises:
+            IndexError: If slide_index_to_duplicate is out of range.
+        """
+        num_slides = len(self.presentation.slides)
+        if not 0 <= slide_index_to_duplicate < num_slides:
+            raise IndexError(f"slide_index_to_duplicate {slide_index_to_duplicate} is out of range. "
+                             f"Presentation has {num_slides} slides (indices 0 to {num_slides-1}).")
+
+        source_slide_pptx = self.presentation.slides[slide_index_to_duplicate]
+        source_layout = source_slide_pptx.slide_layout
+
+        new_slide_pptx = self.presentation.slides.add_slide(source_layout)
+        new_py_slide = PySlide(new_slide_pptx)
+
+        for shape in source_slide_pptx.shapes:
+            try:
+                if shape.is_placeholder:
+                    if shape.placeholder_format.type == PP_PLACEHOLDER.TITLE:
+                        if new_py_slide.pptx_slide.shapes.title and hasattr(shape, "text"):
+                            new_py_slide.pptx_slide.shapes.title.text = shape.text
+                    elif hasattr(shape, "text") and shape.text and \
+                         shape.placeholder_format.type in (PP_PLACEHOLDER.BODY,
+                                                           PP_PLACEHOLDER.CONTENT,
+                                                           PP_PLACEHOLDER.OBJECT,
+                                                           PP_PLACEHOLDER.SUBTITLE,
+                                                           PP_PLACEHOLDER.TEXT_BOX):
+                        new_py_slide.add_text_box(shape.text,
+                                                   shape.left.inches, shape.top.inches,
+                                                   shape.width.inches, shape.height.inches)
+
+                elif shape.has_text_frame and shape.text_frame.text and not shape.is_placeholder:
+                    new_py_slide.add_text_box(shape.text_frame.text,
+                                               shape.left.inches, shape.top.inches,
+                                               shape.width.inches, shape.height.inches)
+
+                elif hasattr(shape, 'shape_type') and shape.shape_type in (MSO_SHAPE.RECTANGLE,
+                                                                            MSO_SHAPE.OVAL,
+                                                                            MSO_SHAPE.LINE,
+                                                                            MSO_SHAPE.ROUNDED_RECTANGLE,
+                                                                            MSO_SHAPE.TRIANGLE):
+                    new_added_shape = new_py_slide.add_shape(
+                        shape.shape_type,
+                        shape.left.inches, shape.top.inches,
+                        shape.width.inches, shape.height.inches,
+                        shape_name=shape.name + "_copy" if shape.name else None
+                    )
+                    if shape.has_text_frame and shape.text_frame.text:
+                        new_added_shape.text_frame.text = shape.text_frame.text
+            except Exception:
+                pass
+
+        return new_py_slide
 
     def save(self, filename):
         """Saves the presentation to the given filename."""
