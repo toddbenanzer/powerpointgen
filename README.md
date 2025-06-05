@@ -16,7 +16,7 @@ pip install -r requirements.txt
 Here's how to create a new presentation, add a slide, and save it:
 
 ```python
-from pptx_wrapper import PresentationWrapper
+from pyppt import PresentationWrapper
 
 # Create a new presentation
 preso_wrapper = PresentationWrapper()
@@ -39,7 +39,7 @@ print("Presentation created and saved as my_presentation.pptx")
 To open an existing presentation, you can pass the file path to the constructor:
 
 ```python
-from pptx_wrapper import PresentationWrapper
+from pyppt import PresentationWrapper
 
 # Open an existing presentation
 # (Assuming you have a presentation named 'existing_presentation.pptx')

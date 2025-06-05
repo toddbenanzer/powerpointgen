@@ -1,4 +1,4 @@
-from pptx_wrapper import PresentationWrapper
+from pyppt import PresentationWrapper
 
 # --- Create a new presentation ---
 print("Creating a new presentation...")
