@@ -1,109 +1,149 @@
-from pyppt import PresentationWrapper
+from pyppt import PyPPT
 
 # --- Create a new presentation ---
 print("Creating a new presentation...")
-new_preso = PresentationWrapper()
+new_preso = PyPPT()
 
-# Add a slide using the default layout (typically 'Title and Content')
+# Add slides and get their PySlide instances
 print("Adding slide 1 (default layout)...")
-new_preso.add_slide()
+slide_one = new_preso.add_slide() # Returns PySlide
+try:
+    slide_one.set_title("Slide One Title (Default Layout)")
+    print("Set title for slide one.")
+    # Example: Add a quick bullet list to the first slide
+    slide_one.add_bullet_point_box(["Item A", "Item B"], left=1, top=2, width=5, height=2)
+    print("Added bullets to slide one.")
+except AttributeError as e:
+    print(f"Could not set title or add content for slide one: {e} (Layout might not support title or check placeholder names)")
+except Exception as e:
+    print(f"An error occurred with slide one: {e}")
 
-# Add a title-only slide (layout_index=5 is often 'Title and Content', 0 is often 'Title Slide', 1 is often 'Title and Content')
-# We'll try to add a few common ones.
-# Specific indices can vary, so this is for demonstration.
-# Users should check their specific default template's slide layouts.
-print("Adding slide 2 (layout index 0 - typically Title Slide)...")
-new_preso.add_slide(layout_index=0)
 
-print("Adding slide 3 (layout index 1 - typically Title and Content)...")
-new_preso.add_slide(layout_index=1)
+print("\nAdding slide 2 (layout index 0 - typically Title Slide)...")
+slide_two = new_preso.add_slide(layout_index=0) # Returns PySlide
+try:
+    slide_two.set_title("Slide Two (Title Slide Layout)")
+    slide_two.set_subtitle("This is a subtitle for the Title Slide")
+    print("Set title and subtitle for slide two.")
+except AttributeError as e:
+    print(f"Could not set title/subtitle for slide two: {e} (Layout might not have these placeholders).")
+except Exception as e:
+    print(f"An error occurred with slide two: {e}")
 
-# Save the new presentation
-output_filename = "sample_presentation.pptx"
-print(f"Saving new presentation as {output_filename}...")
+print("\nAdding slide 3 (layout index 1 - typically Title and Content)...")
+slide_three = new_preso.add_slide(layout_index=1) # Returns PySlide
+try:
+    slide_three.set_title("Slide Three (Title and Content Layout)")
+    # Add a text box to this slide
+    slide_three.add_text_box("Content text box on slide three.", left=1, top=2, width=5, height=2)
+    print("Set title and added text box for slide three.")
+except AttributeError as e:
+    print(f"Could not set title or add content for slide three: {e} (Layout might not have these placeholders).")
+except Exception as e:
+    print(f"An error occurred with slide three: {e}")
+
+# Save the new presentation (first version)
+output_filename = "sample_presentation_initial.pptx"
+print(f"\nSaving initial presentation as {output_filename}...")
 new_preso.save(output_filename)
-print(f"Presentation saved: {output_filename}")
+print(f"Initial presentation saved: {output_filename}")
 
 
-# (Assuming new_preso is an existing PresentationWrapper instance from earlier in the script)
-print("\n--- Demonstrating Text Manipulation ---")
+# --- Demonstrating Further Text Manipulation on Existing Slides ---
+print("\n--- Demonstrating Further Text Manipulation ---")
 
-if len(new_preso.presentation.slides) > 0:
-    print("\nSetting title and subtitle for slide 0...")
+# Check if there are any slides to manipulate
+if len(new_preso.slides) > 0:
+    # Get the first slide (slide_one) using the .slides property or get_slide()
+    # target_slide_ops = new_preso.slides[0]
+    target_slide_ops = new_preso.get_slide(0) # Using get_slide for variety
+
+    slide_title_for_print = "N/A"
     try:
-        new_preso.set_title(0, "Example Title")
-        # For the first slide, let's use a layout that typically has a subtitle.
-        # If new_preso.add_slide() added a "Title and Content" (layout 1 or 5), it should have a title.
-        # If new_preso.add_slide(layout_index=0) was the first slide, it's a "Title Slide", which has a subtitle.
-        # We'll assume the first slide added (index 0) is suitable.
-        # The example script adds slides with layout_index default, then 0, then 1.
-        # So, slide 0 (first one added) is default layout. Slide 1 is layout 0. Slide 2 is layout 1.
-        # Let's try to set title on slide 1 (which used layout_index=0, often "Title Slide")
-        # and subtitle on that same slide.
-        # Or, to be safe, let's target slide 1 (which was created with layout_index=0) for both.
-        # The example script adds 3 slides. Slide 0, 1, 2.
-        # Slide 1 (index 1) was created with layout_index=0 (Title Slide)
-        new_preso.set_title(1, "Title for Slide with Layout 0")
-        new_preso.set_subtitle(1, "This is a subtitle on a Title Slide Layout.")
-        print("Title and subtitle set for slide 1.")
-    except AttributeError as e:
-        print(f"Could not set title/subtitle for slide 1: {e} (Layout might not have these placeholders).")
-    except IndexError:
-        print("Cannot set title/subtitle, slide 1 not found.")
+        # Attempt to get the title text if the title shape and text exist
+        if target_slide_ops.pptx_slide.shapes.title and target_slide_ops.pptx_slide.shapes.title.has_text_frame and target_slide_ops.pptx_slide.shapes.title.text_frame.text:
+            slide_title_for_print = target_slide_ops.pptx_slide.shapes.title.text_frame.text
+    except AttributeError: # Handles cases where title shape might not exist as expected
+        pass # slide_title_for_print remains "N/A"
 
-    print("\nSetting footer text for slide 0...")
+    print(f"\nModifying first slide (Index 0 - Current Title: '{slide_title_for_print}')...")
+
+    print("Updating title and subtitle for first slide...")
     try:
-        new_preso.set_footer_text(0, "Sample Footer Text - Slide 1")
-        print("Footer text set for slide 0.")
+        target_slide_ops.set_title("Updated Title for First Slide")
+        target_slide_ops.set_subtitle("This is an updated subtitle for the first slide.")
+        print("Title and subtitle updated for first slide.")
     except AttributeError as e:
-        print(f"Could not set footer for slide 0: {e} (Layout might not have a footer placeholder).")
-    except IndexError:
-        print("Cannot set footer, slide 0 not found.")
+        print(f"Could not set/update title/subtitle for first slide: {e} (Layout might not have these placeholders).")
 
-    print("\nAdding a text box to slide 0...")
-    new_preso.add_text_box(0, "Hello from a text box on Slide 1!", left=1, top=2.5, width=3, height=0.5)
-    print("Text box added to slide 0.")
+    print("\nSetting footer text for first slide...")
+    try:
+        target_slide_ops.set_footer_text("Updated Footer Text for First Slide")
+        print("Footer text set for first slide.")
+    except AttributeError as e:
+        print(f"Could not set footer for first slide: {e} (Layout might not have a footer placeholder).")
 
-    print("\nAdding bullet points to slide 0...")
-    bullet_items = ["Introduction", "Main Points", "Conclusion"]
-    new_preso.add_bullet_point_box(0, bullet_items, left=1, top=3.5, width=4, height=1.5)
-    print("Bullet point box added to slide 0.")
+    print("\nAdding another text box to the first slide...")
+    try:
+        target_slide_ops.add_text_box("Another text box, added during text manipulation phase.", left=1, top=4, width=5, height=1)
+        print("Another text box added to the first slide.")
+    except Exception as e:
+        print(f"Error adding another text box to first slide: {e}")
+
+    print("\nAdding more bullet points to the first slide...")
+    try:
+        more_bullet_items = ["Additional Point 1", "Additional Point 2"]
+        # This will add a new text box with bullets. If you want to add to existing, that's a different logic.
+        target_slide_ops.add_bullet_point_box(more_bullet_items, left=1, top=5, width=5, height=1.5)
+        print("Additional bullet point box added to the first slide.")
+    except Exception as e:
+        print(f"Error adding more bullet points to first slide: {e}")
 else:
     print("\nSkipping text manipulation examples as no slides were added.")
 
 print("\nAttempting to set slide numbers visibility (True)...")
-new_preso.set_slide_numbers_visibility(True)
-# (Add a note that user should check the output file)
+new_preso.set_slide_numbers_visibility(True) # This method is on PyPPT
 
 # Re-save the presentation to include these text changes
 updated_output_filename = "sample_presentation_with_text.pptx"
-print(f"\nSaving presentation with text manipulations as {updated_output_filename}...")
+print(f"\nSaving presentation with all manipulations as {updated_output_filename}...")
 new_preso.save(updated_output_filename)
 print(f"Presentation saved: {updated_output_filename}")
 
 print("\n--- Example Finished ---")
-print(f"Please open {output_filename} and {updated_output_filename} to view the results.")
+print(f"Please open '{output_filename}' and '{updated_output_filename}' to view the results.")
 
 # --- Optional: Example of opening an existing presentation ---
 # print("\n--- Opening an existing presentation (example) ---")
 # try:
-#     # Create a dummy presentation first to ensure the open example can run
-#     # In a real scenario, this file would already exist.
-#     dummy_preso_for_opening = PresentationWrapper()
-#     dummy_preso_for_opening.add_slide(layout_index=5) # Add a blank slide
-#     dummy_preso_for_opening.save("existing_example.pptx")
+#     # To run this, first ensure 'existing_example.pptx' exists.
+#     # You can create one by renaming one of the outputs from this script.
+    # dummy_preso_for_opening = PyPPT()
+#     # slide = dummy_preso_for_opening.add_slide()
+#     # slide.set_title("Existing Presentation Example")
+#     # dummy_preso_for_opening.save("existing_example.pptx")
 #
 #     print("Opening 'existing_example.pptx'...")
-#     existing_preso = PresentationWrapper("existing_example.pptx")
+#     existing_preso = PyPPT("existing_example.pptx")
 #
-#     print("Adding a new slide to the existing presentation...")
-#     existing_preso.add_slide(layout_index=5) # Add another blank slide
+#     if len(existing_preso.slides) > 0:
+#         print("Modifying the first slide of the existing presentation...")
+#         slide_to_modify = existing_preso.slides[0] # Get PySlide for the first slide
+#         slide_to_modify.set_title("Title Modified in Existing Presentation")
+#         slide_to_modify.add_text_box("New text box in existing.", 1, 2, 3, 1)
 #
-#     existing_output_filename = "existing_example_modified.pptx"
-#     print(f"Saving modified presentation as {existing_output_filename}...")
-#     existing_preso.save(existing_output_filename)
-#     print(f"Modified presentation saved: {existing_output_filename}")
+#         print("Adding a new slide to the existing presentation...")
+#         new_slide_in_existing = existing_preso.add_slide()
+#         new_slide_in_existing.set_title("Newly Added Slide in Existing Presentation")
 #
+#         existing_output_filename = "existing_example_modified.pptx"
+#         print(f"Saving modified existing presentation as {existing_output_filename}...")
+#         existing_preso.save(existing_output_filename)
+#         print(f"Modified existing presentation saved: {existing_output_filename}")
+#     else:
+#         print("'existing_example.pptx' has no slides to modify.")
+#
+# except FileNotFoundError:
+#     print("Error: 'existing_example.pptx' not found. Please create it to run this part of the example.")
 # except Exception as e:
 #     print(f"Error in opening/modifying existing presentation example: {e}")
-#     print("This part of the example requires a file named 'existing_example.pptx' to be present.")
