@@ -154,3 +154,67 @@ if len(preso_wrapper.slides) > 0:
 else:
     print("No slides to add bullet points to.")
 ```
+
+### Adding Pandas DataFrames as Tables
+
+The `PySlide` class provides a method to easily insert a Pandas DataFrame as a table onto a slide, with options for custom column names and number formatting.
+
+First, ensure you have `pandas` installed (it's listed in `requirements.txt`).
+
+```python
+import pandas as pd
+# Assuming 'slide' is a PySlide object obtained from PyPPT
+# (e.g., new_slide = preso.add_slide() or existing_slide = preso.slides[0])
+
+# Create a sample DataFrame
+data = {
+    'product_name': ['Laptop', 'Mouse', 'Keyboard', 'Monitor'],
+    'sales_id': [101, 102, 103, 104],
+    'quantity_sold': [150, 300, 200, 100],
+    'unit_price': [1200.00, 25.50, 75.00, 300.99],
+    'revenue': [180000.00, 7650.00, 15000.00, 30099.00]
+}
+df = pd.DataFrame(data)
+df.set_index('sales_id', inplace=True) # Example with an index
+
+# Define custom column labels for the table
+custom_labels = {
+    'product_name': 'Product',
+    'quantity_sold': 'Units Sold',
+    'unit_price': 'Price per Unit ($)',
+    'revenue': 'Total Revenue ($)'
+}
+
+# Define number formats for specific columns
+# Uses Python's format string syntax
+number_formatting = {
+    'unit_price': '.2f',    # Format as float with 2 decimal places
+    'revenue': ',.2f',     # Format as float with comma separator and 2 decimal places
+    'quantity_sold': ',d'  # Format as integer with comma separator
+}
+
+# Add the DataFrame as a table to the slide
+try:
+    table_shape = slide.add_table_from_dataframe(
+        dataframe=df,
+        left=0.5, top=2.0, width=9.0, height=1.5, # Position and size in Inches
+        column_labels=custom_labels,
+        number_formats=number_formatting,
+        include_index=True,
+        index_label="Sales ID"
+    )
+    print("DataFrame table added to the slide.")
+except Exception as e:
+    print(f"Error adding DataFrame table: {e}")
+```
+
+**Parameters for `add_table_from_dataframe`:**
+
+*   `dataframe` (pd.DataFrame): The Pandas DataFrame to insert.
+*   `left`, `top`, `width`, `height` (float): Position and size of the table in Inches.
+*   `column_labels` (dict, optional): A dictionary mapping original DataFrame column names to custom display names for the table header (e.g., `{'df_col_name': 'Display Name'}`).
+*   `number_formats` (dict, optional): A dictionary mapping original DataFrame column names to Python format strings (e.g., `{'price_col': '$,.2f'}`). Applied to cell values.
+*   `include_index` (bool, optional): If `True`, includes the DataFrame's index as the first column. Defaults to `False`.
+*   `index_label` (str, optional): If `include_index` is `True`, this string is used as the header for the index column. Defaults to the DataFrame's index name or "Index".
+
+The method returns the `GraphicFrame` object representing the table.

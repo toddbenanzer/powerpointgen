@@ -1,4 +1,5 @@
 from pyppt import PyPPT
+import pandas as pd
 
 # --- Create a new presentation ---
 print("Creating a new presentation...")
@@ -100,6 +101,79 @@ if len(new_preso.slides) > 0:
         print(f"Error adding more bullet points to first slide: {e}")
 else:
     print("\nSkipping text manipulation examples as no slides were added.")
+
+# --- Demonstrating Adding DataFrame as Table ---
+print("\n--- Demonstrating Adding DataFrame as Table ---")
+
+if len(new_preso.slides) == 0:
+    print("Adding a new slide for the table example...")
+    table_slide = new_preso.add_slide()
+    try:
+        table_slide.set_title("DataFrame Table Example")
+    except AttributeError:
+        print("INFO: New slide for table has no title placeholder.")
+else:
+    print("Using the first slide for the table example.")
+    table_slide = new_preso.slides[0] # Get the first slide
+    try:
+        if not table_slide.pptx_slide.shapes.title:
+             table_slide.set_title("DataFrame Table Example (on existing slide)")
+        elif not table_slide.pptx_slide.shapes.title.text:
+             table_slide.set_title("DataFrame Table Example (on existing slide)")
+        # If title exists and has text, we might not want to overwrite it here, or choose to.
+        # For this example, we'll assume if it has text, we leave it.
+    except AttributeError:
+        print(f"INFO: Slide {new_preso.slides.index(table_slide)} has no title placeholder, adding table without setting/checking title here.")
+
+
+# Create a sample DataFrame
+data = {
+    'Product Name': ['Apples', 'Bananas', 'Cherries', 'Dates'],
+    'Category': ['Fruit', 'Fruit', 'Fruit', 'Fruit'],
+    'Quantity': [120, 250, 75, 100],
+    'Unit Price': [0.99, 0.59, 2.49, 3.00],
+    'Total Value': [118.8, 147.5, 186.75, 300.00]
+}
+df_sample = pd.DataFrame(data)
+df_sample.set_index('Product Name', inplace=True)
+
+print("Sample DataFrame created:")
+print(df_sample)
+
+custom_headers = {
+    'Category': 'Type',
+    'Quantity': 'Amount (Units)',
+    'Unit Price': 'Price/Unit',
+    'Total Value': 'Subtotal'
+}
+
+number_formats_for_table = {
+    'Unit Price': '$.2f',
+    'Total Value': '$,.2f',
+    'Quantity': ',d'
+}
+
+try:
+    print("\nAdding DataFrame to slide...")
+    # Determine slide index for print message
+    slide_idx_for_msg = "N/A"
+    for idx, s_wrapper in enumerate(new_preso.slides):
+        if s_wrapper.pptx_slide == table_slide.pptx_slide:
+            slide_idx_for_msg = idx
+            break
+
+    table_shape = table_slide.add_table_from_dataframe(
+        dataframe=df_sample,
+        left=1, top=3, width=8, height=1.5, # Adjusted top position based on typical slide content
+        column_labels=custom_headers,
+        number_formats=number_formats_for_table,
+        include_index=True,
+        index_label='Product'
+    )
+    print(f"DataFrame table added to slide index {slide_idx_for_msg}.")
+except Exception as e:
+    print(f"Error adding DataFrame table to slide: {e}")
+
 
 print("\nAttempting to set slide numbers visibility (True)...")
 new_preso.set_slide_numbers_visibility(True) # This method is on PyPPT

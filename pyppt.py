@@ -1,6 +1,7 @@
 from pptx import Presentation
 from pptx.enum.shapes import PP_PLACEHOLDER
 from pptx.util import Inches
+import pandas as pd
 
 class PySlide:
     def __init__(self, pptx_slide):
@@ -106,6 +107,96 @@ class PySlide:
             p.level = 0
 
         return shape
+
+    def add_table_from_dataframe(self, dataframe, left, top, width, height,
+                                 column_labels=None, number_formats=None,
+                                 include_index=False, index_label=None):
+        """Adds a table to the slide populated from a Pandas DataFrame.
+
+        Args:
+            dataframe (pd.DataFrame): The Pandas DataFrame to display.
+            left (float): The left position of the table (in Inches).
+            top (float): The top position of the table (in Inches).
+            width (float): The width of the table (in Inches).
+            height (float): The height of the table (in Inches).
+            column_labels (dict, optional): Maps original DataFrame column names
+                                          to custom display names for the table header.
+                                          e.g., {'col_df_name': 'Display Name'}
+            number_formats (dict, optional): Maps original DataFrame column names
+                                           to Python format strings for cell values.
+                                           e.g., {'price_col': '$,.2f', 'qty_col': ',d'}
+            include_index (bool): If True, include the DataFrame's index as the
+                                  first column. Defaults to False.
+            index_label (str, optional): Header for the index column if
+                                       include_index is True. Defaults to DataFrame's
+                                       index name or "Index".
+        Returns:
+            pptx.shapes.graphfrm.GraphicFrame: The table shape object.
+        """
+        if not isinstance(dataframe, pd.DataFrame):
+            raise ValueError("Input 'dataframe' must be a pandas DataFrame.")
+
+        rows = len(dataframe) + 1  # +1 for header row
+        cols = len(dataframe.columns)
+        if include_index:
+            cols += 1
+
+        # Create the table shape
+        table_shape = self.pptx_slide.shapes.add_table(
+            rows, cols, Inches(left), Inches(top), Inches(width), Inches(height)
+        )
+        table = table_shape.table
+
+        # --- Populate Header Row ---
+        current_col_idx = 0
+        if include_index:
+            header_text = index_label if index_label is not None else (dataframe.index.name if dataframe.index.name is not None else "Index")
+            table.cell(0, current_col_idx).text = str(header_text)
+            current_col_idx += 1
+
+        for df_col_name in dataframe.columns:
+            display_name = str(df_col_name) # Default to original column name
+            if column_labels and df_col_name in column_labels:
+                display_name = str(column_labels[df_col_name])
+            table.cell(0, current_col_idx).text = display_name
+            current_col_idx += 1
+
+        # --- Populate Data Rows ---
+        for i, df_row_tuple in enumerate(dataframe.itertuples(index=include_index, name=None)):
+            # df_row_tuple contains actual data values. If include_index=True, first element is index.
+
+            current_cell_idx_in_row = 0
+            data_tuple_offset = 0 # if include_index is False, df_row_tuple starts with first data col
+
+            if include_index:
+                index_val = df_row_tuple[0]
+                # Apply formatting to index if 'index_label' (or a convention) is in number_formats
+                # For now, index is added as string without specific formatting via number_formats
+                table.cell(i + 1, current_cell_idx_in_row).text = str(index_val)
+                current_cell_idx_in_row += 1
+                data_tuple_offset = 1 # Data starts from 2nd element of df_row_tuple
+
+            for col_idx, df_col_name in enumerate(dataframe.columns):
+                cell_value = df_row_tuple[col_idx + data_tuple_offset]
+
+                formatted_value = str(cell_value) # Default to string representation
+                if pd.isna(cell_value): # Handle NaN/None before formatting
+                    formatted_value = "" # Or some other placeholder like "N/A"
+                elif number_formats and df_col_name in number_formats:
+                    try:
+                        fmt_spec = number_formats[df_col_name]
+                        # Ensure value is appropriate for format spec (e.g. numeric for 'f', 'd')
+                        if isinstance(cell_value, (int, float)):
+                             formatted_value = f"{cell_value:{fmt_spec}}"
+                        # else: formatted_value remains str(cell_value) if format spec is for numbers but type isn't
+                    except ValueError:
+                        # print(f"Warning: Could not apply format '{fmt_spec}' to value '{cell_value}' in col '{df_col_name}'. Using default string.")
+                        pass # Keep default string if formatting fails
+
+                table.cell(i + 1, current_cell_idx_in_row).text = formatted_value
+                current_cell_idx_in_row += 1
+
+        return table_shape
 
 class PyPPT:
     def __init__(self, pptx_path=None):
