@@ -1,5 +1,5 @@
 from pptx import Presentation
-from pptx.enum.shapes import PP_PLACEHOLDER
+from pptx.enum.shapes import PP_PLACEHOLDER, MSO_SHAPE
 from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
 import pandas as pd
@@ -254,6 +254,100 @@ class PySlide:
 
         return table_shape
 
+    def add_shape(self, shape_type, left, top, width, height, shape_name=None):
+        """Adds a predefined shape to the slide.
+
+        Args:
+            shape_type (MSO_SHAPE): The type of shape to add (e.g., MSO_SHAPE.RECTANGLE).
+            left (float): The left position of the shape (in Inches).
+            top (float): The top position of the shape (in Inches).
+            width (float): The width of the shape (in Inches).
+            height (float): The height of the shape (in Inches).
+            shape_name (str, optional): An optional name for the shape.
+
+        Returns:
+            pptx.shape.Shape: The newly added shape object.
+        """
+        # Ensure Inches is available (should be imported at module level)
+        new_shape = self.pptx_slide.shapes.add_shape(
+            shape_type,
+            Inches(left), Inches(top),
+            Inches(width), Inches(height)
+        )
+
+        if shape_name:
+            new_shape.name = shape_name
+
+        return new_shape
+
+    def _get_shape(self, shape_ref):
+        """Internal helper to retrieve a shape object.
+
+        Args:
+            shape_ref: Can be a shape object itself, the name of a shape (str),
+                       or the index of a shape in the slide's shape collection (int).
+
+        Returns:
+            pptx.shape.Shape: The found shape object.
+
+        Raises:
+            TypeError: If shape_ref is not a Shape, str, or int.
+            ValueError: If shape name or index is not found.
+        """
+        if hasattr(shape_ref, 'shape_type'): # Check if it's already a Shape object (duck typing)
+            return shape_ref
+        elif isinstance(shape_ref, str): # Find by name
+            for shape_in_slide in self.pptx_slide.shapes:
+                if shape_in_slide.name == shape_ref:
+                    return shape_in_slide
+            raise ValueError(f"Shape with name '{shape_ref}' not found on this slide.")
+        elif isinstance(shape_ref, int): # Find by index
+            try:
+                return self.pptx_slide.shapes[shape_ref]
+            except IndexError:
+                raise ValueError(f"Shape at index {shape_ref} not found on this slide (max index: {len(self.pptx_slide.shapes)-1}).")
+        else:
+            raise TypeError(f"shape_ref must be a shape object, name (str), or index (int), not {type(shape_ref)}.")
+
+    def set_shape_fill_color(self, shape_ref, r, g, b):
+        """Sets the solid fill color of a specified shape.
+
+        Args:
+            shape_ref: The shape object, its name (str), or index (int).
+            r (int): Red component of RGB color (0-255).
+            g (int): Green component of RGB color (0-255).
+            b (int): Blue component of RGB color (0-255).
+        """
+        shape = self._get_shape(shape_ref)
+        shape.fill.solid()
+        shape.fill.fore_color.rgb = RGBColor(r, g, b)
+
+    def set_shape_line_color(self, shape_ref, r, g, b):
+        """Sets the line color of a specified shape.
+
+        Args:
+            shape_ref: The shape object, its name (str), or index (int).
+            r (int): Red component of RGB color (0-255).
+            g (int): Green component of RGB color (0-255).
+            b (int): Blue component of RGB color (0-255).
+        """
+        shape = self._get_shape(shape_ref)
+        shape.line.color.rgb = RGBColor(r, g, b)
+        # To make line visible if it was set to 'no line', you might also need:
+        # shape.line.visible = True # Or shape.line.width > 0
+        # For now, this just sets color. User must ensure line is visible.
+
+    def set_shape_line_weight(self, shape_ref, weight_pt):
+        """Sets the line weight (thickness) of a specified shape.
+
+        Args:
+            shape_ref: The shape object, its name (str), or index (int).
+            weight_pt (float or int): Line weight in points.
+        """
+        shape = self._get_shape(shape_ref)
+        shape.line.width = Pt(weight_pt)
+        # Setting width usually makes the line visible if it had 'no line' previously.
+
 class PyPPT:
     def __init__(self, pptx_path=None):
         if pptx_path:
@@ -263,16 +357,49 @@ class PyPPT:
         # Store the path if provided, though it's less relevant if creating new
         self.pptx_path = pptx_path
 
-    def add_slide(self, layout_index=5):
-        """Adds a new slide to the presentation and returns its wrapper.
+    def add_slide(self, layout_ref=5): # Default is often 'Title and Content' by index
+        """Adds a new slide to the presentation and returns its PySlide wrapper.
 
         Args:
-            layout_index (int): The index of the slide layout to use.
-                                Defaults to 5 (often 'Title and Content').
+            layout_ref (int or str): The index of the slide layout to use (int)
+                                     or the name of the slide layout (str).
+                                     Defaults to index 5.
+
         Returns:
             PySlide: A wrapper for the newly added slide.
+
+        Raises:
+            ValueError: If layout_ref is a string and no layout with that name is found.
+            IndexError: If layout_ref is an integer and is out of range.
+            TypeError: If layout_ref is not an int or str.
         """
-        slide_layout = self.presentation.slide_layouts[layout_index]
+        slide_layout = None
+        if isinstance(layout_ref, str):
+            layout_name_to_find = layout_ref
+            found_layout = None
+            for layout in self.presentation.slide_layouts:
+                if hasattr(layout, 'name') and layout.name == layout_name_to_find: # Check if layout has a name attribute
+                    found_layout = layout
+                    break
+            if found_layout:
+                slide_layout = found_layout
+            else:
+                available_layout_names = [l.name for l in self.presentation.slide_layouts if hasattr(l, 'name')]
+                raise ValueError(
+                    f"Layout with name '{layout_name_to_find}' not found. "
+                    f"Available layout names are: {available_layout_names}"
+                )
+        elif isinstance(layout_ref, int):
+            try:
+                slide_layout = self.presentation.slide_layouts[layout_ref]
+            except IndexError:
+                raise IndexError(
+                    f"Layout index {layout_ref} is out of range. "
+                    f"Available layouts: {len(self.presentation.slide_layouts)}."
+                )
+        else:
+            raise TypeError(f"layout_ref must be an integer index or a string name, not {type(layout_ref)}.")
+
         new_pptx_slide = self.presentation.slides.add_slide(slide_layout)
         return PySlide(new_pptx_slide)
 

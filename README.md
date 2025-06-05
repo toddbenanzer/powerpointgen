@@ -23,11 +23,14 @@ preso_wrapper = PyPPT()
 
 # Add a slide (uses default 'Title and Content' layout)
 # This now returns a PySlide instance
-new_slide = preso_wrapper.add_slide()
+# The add_slide method can take a layout index (int) or layout name (str).
+new_slide = preso_wrapper.add_slide() # Defaults to layout_ref=5
 new_slide.set_title("Title for New Slide") # Example of using the returned slide
 
 # Add another slide using a specific layout index (e.g., 0 for 'Title Slide')
-title_slide_obj = preso_wrapper.add_slide(layout_index=0)
+# Or by layout name, e.g., preso_wrapper.add_slide("Title Slide")
+# (Actual layout names depend on the presentation's design template)
+title_slide_obj = preso_wrapper.add_slide(layout_ref=0)
 title_slide_obj.set_title("Main Title Slide")
 try:
     # Assuming layout 0 (Title Slide) typically has a subtitle placeholder
@@ -247,3 +250,63 @@ except Exception as e:
 *   `header_fill_color_rgb` (tuple, optional): An RGB tuple (e.g., `(0, 0, 0)` for black) for header row background fill.
 
 The method returns the `GraphicFrame` object representing the table.
+
+### Adding and Styling Basic Shapes
+
+You can add various predefined shapes to your slides and apply basic styling.
+
+**Adding a Shape**
+
+Use the `PySlide.add_shape()` method. You'll need to import `MSO_SHAPE` from `pptx.enum.shapes`.
+
+```python
+from pptx.enum.shapes import MSO_SHAPE
+# Assuming 'slide' is a PySlide object (e.g., slide = preso.slides[0])
+
+# Add a rectangle
+rect = slide.add_shape(
+    MSO_SHAPE.RECTANGLE,
+    left=1, top=1, width=2, height=1, # Inches
+    shape_name="MyRectangle"
+)
+print(f"Added rectangle named: {rect.name}")
+
+# Add an oval
+oval = slide.add_shape(
+    MSO_SHAPE.OVAL,
+    left=4, top=1, width=2, height=1.5 # Inches
+)
+print("Added an oval.")
+```
+
+**Styling a Shape**
+
+Once a shape is added (or retrieved), you can style its fill and line.
+The styling methods take a reference to the shape, which can be the shape object itself, its name (if set), or its index on the slide.
+
+```python
+# Assuming 'slide' and 'rect' (the rectangle shape object from above) exist
+
+# Set fill color for the rectangle (e.g., a light blue)
+slide.set_shape_fill_color(rect, r=173, g=216, b=230)
+# Or using its name:
+# slide.set_shape_fill_color("MyRectangle", r=173, g=216, b=230)
+
+# Set line color and weight for the oval
+slide.set_shape_line_color(oval, r=255, g=0, b=0) # Red line
+slide.set_shape_line_weight(oval, weight_pt=2.5) # 2.5 points thick
+
+print("Applied styling to shapes.")
+```
+
+**Helper for Shape Reference (`shape_ref`)**
+
+The `shape_ref` argument in styling methods can be:
+*   The shape object itself (returned by `add_shape` or `slide.shapes[idx]`).
+*   The name of the shape (string), if you assigned one using `shape_name` in `add_shape`.
+*   The index of the shape (integer) in the slide's shapes collection.
+
+**Available Styling Methods on `PySlide`**:
+*   `set_shape_fill_color(shape_ref, r, g, b)`
+*   `set_shape_line_color(shape_ref, r, g, b)`
+*   `set_shape_line_weight(shape_ref, weight_pt)`

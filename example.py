@@ -1,5 +1,6 @@
 from pyppt import PyPPT
 import pandas as pd
+from pptx.enum.shapes import MSO_SHAPE
 
 # --- Create a new presentation ---
 print("Creating a new presentation...")
@@ -20,19 +21,39 @@ except Exception as e:
     print(f"An error occurred with slide one: {e}")
 
 
-print("\nAdding slide 2 (layout index 0 - typically Title Slide)...")
-slide_two = new_preso.add_slide(layout_index=0) # Returns PySlide
+print("\nAdding slide 2 using layout name 'Title Slide' (or 'Title' if that's the name)...")
+slide_two = None # Initialize slide_two
 try:
-    slide_two.set_title("Slide Two (Title Slide Layout)")
-    slide_two.set_subtitle("This is a subtitle for the Title Slide")
-    print("Set title and subtitle for slide two.")
-except AttributeError as e:
-    print(f"Could not set title/subtitle for slide two: {e} (Layout might not have these placeholders).")
+    # Common layout names. Actual names can vary by template.
+    # Attempt "Title Slide" first, then "Title", then "Blank" as fallbacks for example.
+    layout_name_to_try = "Title Slide"
+    try:
+        slide_two = new_preso.add_slide(layout_ref=layout_name_to_try)
+    except ValueError:
+        print(f"Layout '{layout_name_to_try}' not found, trying 'Title'...")
+        layout_name_to_try = "Title"
+        try:
+            slide_two = new_preso.add_slide(layout_ref=layout_name_to_try)
+        except ValueError:
+            print(f"Layout '{layout_name_to_try}' not found, trying 'Blank'...")
+            layout_name_to_try = "Blank"
+            slide_two = new_preso.add_slide(layout_ref=layout_name_to_try)
+
+    slide_two.set_title(f"Slide via Layout Name: '{layout_name_to_try}'")
+    # Attempt to set subtitle, common for "Title Slide" or "Title" layouts
+    try:
+        slide_two.set_subtitle("Subtitle for name-based layout slide")
+    except AttributeError:
+        print(f"Layout '{layout_name_to_try}' does not have a subtitle placeholder.")
+    print(f"Added slide using layout name '{layout_name_to_try}'.")
 except Exception as e:
-    print(f"An error occurred with slide two: {e}")
+    print(f"Error adding slide by name: {e}. Adding by index 0 as fallback.")
+    slide_two = new_preso.add_slide(layout_ref=0) # Fallback to index
+    slide_two.set_title("Slide via Index 0 (Fallback)")
+
 
 print("\nAdding slide 3 (layout index 1 - typically Title and Content)...")
-slide_three = new_preso.add_slide(layout_index=1) # Returns PySlide
+slide_three = new_preso.add_slide(layout_ref=1) # Returns PySlide
 try:
     slide_three.set_title("Slide Three (Title and Content Layout)")
     # Add a text box to this slide
@@ -193,6 +214,80 @@ try:
     print(f"Styled DataFrame table added to slide index {slide_idx_for_msg}.")
 except Exception as e:
     print(f"Error adding styled DataFrame table to slide: {e}")
+
+
+# --- Demonstrating Adding and Styling Shapes ---
+print("\n--- Demonstrating Adding and Styling Shapes ---")
+
+if not new_preso.slides:
+    print("Adding a new slide for shape examples...")
+    # Attempt to use a "Blank" layout by name, fallback to index 6 if not found
+    try:
+        shape_slide = new_preso.add_slide(layout_ref="Blank")
+    except ValueError:
+        print("Layout 'Blank' not found, trying index 6 for a blank-like layout.")
+        shape_slide = new_preso.add_slide(layout_ref=6) # Index 6 is often Blank
+
+    try:
+        shape_slide.set_title("Shape Examples")
+    except AttributeError:
+        print("INFO: Shape slide has no title placeholder.")
+else:
+    # Use the first slide for shapes
+    shape_slide = new_preso.slides[0]
+    print(f"Adding shapes to slide index 0...")
+
+
+# Add a rectangle and name it
+print("Adding a named rectangle...")
+rect_shape = shape_slide.add_shape(
+    MSO_SHAPE.RECTANGLE,
+    left=0.5, top=4.5, width=2.5, height=1.5, # Adjusted top to avoid overlap with table
+    shape_name="MyExampleRectangle"
+)
+print(f"Rectangle '{rect_shape.name}' added.")
+
+# Add an oval
+print("Adding an oval...")
+oval_shape = shape_slide.add_shape(
+    MSO_SHAPE.OVAL,
+    left=3.5, top=4.5, width=2.0, height=1.0, # Adjusted top
+    shape_name="MyOvalShape" # Give it a name for potential reference
+)
+print("Oval added.")
+
+# Add a line
+print("Adding a line shape...")
+line_shape = shape_slide.add_shape(
+    MSO_SHAPE.LINE, # Using MSO_SHAPE.LINE for a standard line
+    left=0.5, top=6.0, width=5.0, height=0 # Adjusted top
+)
+print("Line shape added.")
+
+
+print("\nStyling the shapes...")
+# Style the rectangle by its name
+print("Setting fill color for 'MyExampleRectangle'...")
+try:
+    shape_slide.set_shape_fill_color("MyExampleRectangle", r=173, g=216, b=230) # Light Blue
+except ValueError as e:
+    print(f"Could not style rectangle by name: {e}")
+
+
+# Style the oval using its object reference
+print("Setting line color and weight for the oval shape...")
+shape_slide.set_shape_line_color(oval_shape, r=255, g=0, b=0)   # Red
+shape_slide.set_shape_line_weight(oval_shape, weight_pt=3)     # 3 points thick
+
+# Style the line by its index (assuming it's the last shape added to this slide)
+# This is fragile; using the object 'line_shape' or its name (if set) is better.
+# For demonstration, let's assume we know its index or give it a name.
+# Let's style it by object reference for robustness:
+print("Setting line color and weight for the line shape...")
+shape_slide.set_shape_line_color(line_shape, r=0, g=0, b=0) # Black
+shape_slide.set_shape_line_weight(line_shape, weight_pt=2)
+
+print("Shape styling applied.")
 
 
 print("\nAttempting to set slide numbers visibility (True)...")
