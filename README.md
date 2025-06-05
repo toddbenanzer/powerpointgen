@@ -51,3 +51,69 @@ from pyppt import PresentationWrapper
 # Save changes (either to a new file or overwrite)
 # preso_wrapper.save("existing_presentation_modified.pptx")
 ```
+
+### Text Manipulation
+
+The `PresentationWrapper` class provides methods to add and modify various text elements on your slides.
+
+**Setting Titles and Subtitles**
+
+You can set the title and subtitle for a slide if its layout includes placeholders for them.
+
+```python
+# Assuming 'preso_wrapper' is an instance of PresentationWrapper
+# and has at least one slide (e.g., added via preso_wrapper.add_slide())
+# Set title for the first slide (index 0)
+try:
+    preso_wrapper.set_title(0, "My Presentation Title")
+    preso_wrapper.set_subtitle(0, "A Subtitle for the First Slide")
+except IndexError:
+    print("Error: Slide index out of range. Add a slide first.")
+except AttributeError as e:
+    print(f"Error setting title/subtitle: {e}. Ensure slide layout has these placeholders.")
+```
+
+**Managing Footers and Slide Numbers**
+
+Set footer text on a specific slide:
+```python
+# Set footer text for the first slide
+try:
+    preso_wrapper.set_footer_text(0, "Confidential - Company Use Only")
+except IndexError:
+    print("Error: Slide index out of range.")
+except AttributeError as e:
+    print(f"Error setting footer: {e}. Ensure slide layout has a footer placeholder.")
+```
+
+Control slide number visibility (attempts to hide/show based on placeholder text):
+```python
+# Attempt to make slide numbers visible
+preso_wrapper.set_slide_numbers_visibility(True)
+# Attempt to hide slide numbers
+# preso_wrapper.set_slide_numbers_visibility(False)
+```
+*Note: Slide number visibility is heavily dependent on the slide master and layout configurations.*
+
+**Adding Text Boxes**
+
+Add a simple text box to a slide at a specified position (in inches):
+```python
+# Add a text box to the first slide
+try:
+    preso_wrapper.add_text_box(0, "This is some important text.", left=1, top=2, width=4, height=1)
+except IndexError:
+    print("Error: Slide index out of range.")
+```
+
+**Adding Bullet Points**
+
+Add a text box with bullet points:
+```python
+# Add bullet points to the first slide
+try:
+    items = ["Bullet point 1", "Another bullet point", "Final bullet"]
+    preso_wrapper.add_bullet_point_box(0, items, left=1, top=3.5, width=5, height=2)
+except IndexError:
+    print("Error: Slide index out of range.")
+```
