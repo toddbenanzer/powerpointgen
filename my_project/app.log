@@ -1,0 +1,18 @@
+2025-06-06 02:42:25,691 - app_logger - INFO - add function called with a: 10, b: 5
+2025-06-06 02:42:25,743 - app_logger - INFO - add function called with a: -3, b: 5
+2025-06-06 02:42:25,849 - app_logger - INFO - greet function called with name: None
+2025-06-06 02:42:25,850 - app_logger - INFO - Name is None, attempting to load default name from config.
+2025-06-06 02:42:25,850 - app_logger - INFO - Default name loaded: User
+2025-06-06 02:42:25,905 - app_logger - INFO - greet function called with name: Alice
+2025-06-06 02:42:37,413 - app_logger - INFO - add function called with a: 10, b: 5
+2025-06-06 02:42:37,465 - app_logger - INFO - add function called with a: -3, b: 5
+2025-06-06 02:42:37,570 - app_logger - INFO - greet function called with name: None
+2025-06-06 02:42:37,570 - app_logger - INFO - Name is None, attempting to load default name from config.
+2025-06-06 02:42:37,570 - app_logger - INFO - Default name loaded: User
+2025-06-06 02:42:37,621 - app_logger - INFO - greet function called with name: Alice
+2025-06-06 02:42:49,931 - app_logger - INFO - add function called with a: 10, b: 5
+2025-06-06 02:42:49,984 - app_logger - INFO - add function called with a: -3, b: 5
+2025-06-06 02:42:50,092 - app_logger - INFO - greet function called with name: None
+2025-06-06 02:42:50,092 - app_logger - INFO - Name is None, attempting to load default name from config.
+2025-06-06 02:42:50,092 - app_logger - INFO - Default name loaded: User
+2025-06-06 02:42:50,144 - app_logger - INFO - greet function called with name: Alice
