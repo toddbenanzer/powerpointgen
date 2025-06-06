@@ -12,9 +12,9 @@ pip install -r requirements.txt
 ```
 
 **Note on Importing Enums:**
-Common `python-pptx` enums needed for certain operations, like `MSO_SHAPE` (for adding shapes), `XL_CHART_TYPE` (for adding charts), and `PP_PLACEHOLDER` (relevant for understanding slide structure if customizing layouts or dealing with placeholders directly), are re-exported for convenience. You can import them directly from `pyppt`:
+Common `python-pptx` enums needed for certain operations, like `MSO_SHAPE` (for adding shapes), `XL_CHART_TYPE` (for adding charts), and `PP_PLACEHOLDER` (relevant for understanding slide structure if customizing layouts or dealing with placeholders directly), are re-exported for convenience from the `pypptx` package:
 ```python
-from pyppt import PyPPT, PySlide, MSO_SHAPE, XL_CHART_TYPE, PP_PLACEHOLDER
+from pypptx import PyPPT, PySlide, MSO_SHAPE, XL_CHART_TYPE, PP_PLACEHOLDER
 ```
 
 ### Basic Usage
@@ -22,7 +22,7 @@ from pyppt import PyPPT, PySlide, MSO_SHAPE, XL_CHART_TYPE, PP_PLACEHOLDER
 Here's how to create a new presentation, add a slide, and save it:
 
 ```python
-from pyppt import PyPPT
+from pypptx import PyPPT
 
 # Create a new presentation
 preso_wrapper = PyPPT()
@@ -63,7 +63,7 @@ print("Presentation created and saved as my_presentation.pptx")
 To open an existing presentation, you can pass the file path to the constructor:
 
 ```python
-from pyppt import PyPPT
+from pypptx import PyPPT
 
 # Open an existing presentation
 # (Assuming you have a presentation named 'existing_presentation.pptx')
@@ -263,10 +263,10 @@ You can add various predefined shapes to your slides and apply basic styling.
 
 **Adding a Shape**
 
-Use the `PySlide.add_shape()` method. You'll need to import `MSO_SHAPE` from `pptx.enum.shapes`.
+Use the `PySlide.add_shape()` method. You can import `MSO_SHAPE` directly from `pypptx` (as it's re-exported) or from `pptx.enum.shapes`.
 
 ```python
-from pptx.enum.shapes import MSO_SHAPE
+from pypptx import MSO_SHAPE # Or from pptx.enum.shapes import MSO_SHAPE
 # Assuming 'slide' is a PySlide object (e.g., slide = preso.slides[0])
 
 # Add a rectangle
@@ -327,7 +327,7 @@ The `add_chart` method on a `PySlide` object allows you to insert charts.
 
 **Parameters:**
 
-*   `chart_type` (`XL_CHART_TYPE`): The type of chart to create (e.g., `XL_CHART_TYPE.LINE`, `XL_CHART_TYPE.COLUMN_CLUSTERED`). You'll need to import this enum: `from pptx.enum.chart import XL_CHART_TYPE`.
+*   `chart_type` (`XL_CHART_TYPE`): The type of chart to create (e.g., `XL_CHART_TYPE.LINE`, `XL_CHART_TYPE.COLUMN_CLUSTERED`). You can import this enum directly from `pypptx` (as it's re-exported) or from `pptx.enum.chart import XL_CHART_TYPE`.
 *   `chart_data_dict` (dict): A dictionary containing the data for the chart. It must have the following structure:
     ```python
     {
@@ -348,7 +348,7 @@ The method returns the `GraphicFrame` object containing the chart.
 **Example: Adding a Line Chart**
 
 ```python
-from pptx.enum.chart import XL_CHART_TYPE
+from pypptx import XL_CHART_TYPE # Or from pptx.enum.chart import XL_CHART_TYPE
 # Assuming 'slide' is a PySlide object
 
 line_chart_data = {
@@ -374,7 +374,7 @@ except ValueError as e:
 **Example: Adding a Clustered Column Chart**
 
 ```python
-# from pptx.enum.chart import XL_CHART_TYPE # Already imported
+# from pypptx import XL_CHART_TYPE # Or from pptx.enum.chart import XL_CHART_TYPE
 # Assuming 'slide' is a PySlide object
 
 column_chart_data = {

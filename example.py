@@ -1,4 +1,4 @@
-from pyppt import PyPPT, MSO_SHAPE, XL_CHART_TYPE # Updated imports
+from pypptx import PyPPT, MSO_SHAPE, XL_CHART_TYPE
 import pandas as pd
 
 # --- Create a new presentation ---
@@ -258,7 +258,7 @@ print("Oval added.")
 # Add a line
 print("Adding a line shape...")
 line_shape = shape_slide.add_shape(
-    MSO_SHAPE.LINE, # Using MSO_SHAPE.LINE for a standard line
+    MSO_SHAPE.LINE_INVERSE, # Using MSO_SHAPE.LINE_INVERSE for a standard line
     left=0.5, top=6.0, width=5.0, height=0 # Adjusted top
 )
 print("Line shape added.")
@@ -377,10 +377,11 @@ def print_slide_titles(presentation_obj, message="Current slides:"):
         return
     for i, slide_wrapper in enumerate(presentation_obj.slides):
         title_text = "(No title placeholder or title not set)"
-        # Check if the shapes collection and title attribute exist, and if title has text
-        if slide_wrapper.pptx_slide.shapes.has_title_placeholder and slide_wrapper.pptx_slide.shapes.title:
-            title_text = slide_wrapper.pptx_slide.shapes.title.text_frame.text or "(Title is empty)"
-        elif slide_wrapper.pptx_slide.placeholders:
+        # Check if the title placeholder shape exists and has text
+        title_shape = slide_wrapper.pptx_slide.shapes.title
+        if title_shape and title_shape.has_text_frame:
+            title_text = title_shape.text_frame.text or "(Title is empty)"
+        elif slide_wrapper.pptx_slide.placeholders: # Fallback to checking other placeholders
             has_text_placeholder = False
             for ph_idx, ph in enumerate(slide_wrapper.pptx_slide.placeholders):
                 if ph.has_text_frame and ph.text_frame.text:
@@ -415,13 +416,14 @@ if new_preso.slides:
         print(f"Slide duplicated. New slide added at index {new_slide_idx}.")
         try:
             original_title = "(Original Untitled or No Title Placeholder)"
-            if new_preso.slides[slide_to_duplicate_idx].pptx_slide.shapes.has_title_placeholder and \
-               new_preso.slides[slide_to_duplicate_idx].pptx_slide.shapes.title :
-                original_title = new_preso.slides[slide_to_duplicate_idx].pptx_slide.shapes.title.text_frame.text or original_title
+            original_title_shape = new_preso.slides[slide_to_duplicate_idx].pptx_slide.shapes.title
+            if original_title_shape and original_title_shape.has_text_frame:
+                original_title = original_title_shape.text_frame.text or original_title
 
-            if duplicated_slide.pptx_slide.shapes.has_title_placeholder and duplicated_slide.pptx_slide.shapes.title:
+            duplicated_slide_title_shape = duplicated_slide.pptx_slide.shapes.title
+            if duplicated_slide_title_shape: # Check if the duplicated slide's layout has a title placeholder
                duplicated_slide.set_title(f"DUPLICATED - {original_title[:30]}")
-            else:
+            else: # If no title placeholder, add a text box
                duplicated_slide.add_text_box(f"DUPLICATED Slide (Original index {slide_to_duplicate_idx})", 0.5, 0.2, 5, 0.5)
             print(f"Set title/text box for duplicated slide (index {new_slide_idx}).")
         except Exception as e_title:
