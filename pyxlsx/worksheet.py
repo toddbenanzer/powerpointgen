@@ -2,6 +2,9 @@ import pandas as pd
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Font, PatternFill, Alignment, NamedStyle
 from openpyxl.styles.numbers import BUILTIN_FORMATS as OPENPYXL_BUILTIN_NUMBER_FORMATS
+from openpyxl.chart import BarChart, LineChart, PieChart, Reference
+
+from .constants import CHART_TYPE_BAR, CHART_TYPE_COLUMN, CHART_TYPE_LINE, CHART_TYPE_PIE # New import
 
 # Consider moving default style values to constants.py later if they become numerous
 DEFAULT_FONT_NAME = "Arial"
@@ -227,3 +230,111 @@ class PyWorksheet:
         """
         self.worksheet.unmerge_cells(start_row=start_row, start_column=start_col,
                                      end_row=end_row, end_column=end_col)
+
+    def add_chart(self,
+                  chart_type: str,
+                  cell_anchor: str,
+                  series_data_range: tuple, # (min_row, min_col, max_row, max_col)
+                  category_labels_range: tuple = None, # (min_row, min_col, max_row, max_col)
+                  titles_from_data: bool = True,
+                  title: str = None,
+                  x_axis_label: str = None,
+                  y_axis_label: str = None,
+                  chart_width: float = 15,  # cm
+                  chart_height: float = 7.5 # cm
+                 ):
+        # Initial input validation (can be expanded later)
+        # Convert input chart_type to upper for case-insensitive comparison
+        input_chart_type_upper = chart_type.upper()
+        if input_chart_type_upper not in [CHART_TYPE_BAR, CHART_TYPE_COLUMN, CHART_TYPE_LINE, CHART_TYPE_PIE]:
+            raise ValueError(f"Unsupported chart_type: {chart_type}. Supported types: BAR, COLUMN, LINE, PIE.")
+
+        if not (isinstance(series_data_range, tuple) and len(series_data_range) == 4):
+            raise ValueError("series_data_range must be a tuple of (min_row, min_col, max_row, max_col).")
+        if category_labels_range and not (isinstance(category_labels_range, tuple) and len(category_labels_range) == 4):
+            raise ValueError("category_labels_range must be a tuple of (min_row, min_col, max_row, max_col) if provided.")
+
+        chart_obj = None
+
+        if input_chart_type_upper == CHART_TYPE_BAR or input_chart_type_upper == CHART_TYPE_COLUMN:
+            chart_obj = BarChart()
+            if input_chart_type_upper == CHART_TYPE_BAR:
+                chart_obj.type = "bar" # Horizontal bars
+            else: # CHART_TYPE_COLUMN
+                chart_obj.type = "col" # Vertical columns
+
+            s_min_row, s_min_col, s_max_row, s_max_col = series_data_range
+            series_ref = Reference(self.worksheet,
+                                   min_col=s_min_col, min_row=s_min_row,
+                                   max_col=s_max_col, max_row=s_max_row)
+            chart_obj.add_data(series_ref, titles_from_data=titles_from_data)
+
+            if category_labels_range:
+                c_min_row, c_min_col, c_max_row, c_max_col = category_labels_range
+                cat_ref = Reference(self.worksheet,
+                                    min_col=c_min_col, min_row=c_min_row,
+                                    max_col=c_max_col, max_row=c_max_row)
+                chart_obj.set_categories(cat_ref)
+
+            if title:
+                chart_obj.title = title
+            if x_axis_label:
+                chart_obj.x_axis.title = x_axis_label
+            if y_axis_label:
+                chart_obj.y_axis.title = y_axis_label
+
+        elif input_chart_type_upper == CHART_TYPE_LINE:
+            chart_obj = LineChart()
+
+            s_min_row, s_min_col, s_max_row, s_max_col = series_data_range
+            series_ref = Reference(self.worksheet,
+                                   min_col=s_min_col, min_row=s_min_row,
+                                   max_col=s_max_col, max_row=s_max_row)
+            chart_obj.add_data(series_ref, titles_from_data=titles_from_data)
+
+            if category_labels_range:
+                c_min_row, c_min_col, c_max_row, c_max_col = category_labels_range
+                cat_ref = Reference(self.worksheet,
+                                    min_col=c_min_col, min_row=c_min_row,
+                                    max_col=c_max_col, max_row=c_max_row)
+                chart_obj.set_categories(cat_ref)
+
+            if title:
+                chart_obj.title = title
+            if x_axis_label:
+                chart_obj.x_axis.title = x_axis_label
+            if y_axis_label:
+                chart_obj.y_axis.title = y_axis_label
+
+        elif input_chart_type_upper == CHART_TYPE_PIE:
+            chart_obj = PieChart()
+
+            s_min_row, s_min_col, s_max_row, s_max_col = series_data_range
+            series_ref = Reference(self.worksheet,
+                                   min_col=s_min_col, min_row=s_min_row,
+                                   max_col=s_max_col, max_row=s_max_row)
+            chart_obj.add_data(series_ref, titles_from_data=titles_from_data)
+
+            if category_labels_range:
+                c_min_row, c_min_col, c_max_row, c_max_col = category_labels_range
+                cat_ref = Reference(self.worksheet,
+                                    min_col=c_min_col, min_row=c_min_row,
+                                    max_col=c_max_col, max_row=c_max_row)
+                chart_obj.set_categories(cat_ref)
+            # else:
+            #   print("Warning: category_labels_range not provided for PIE chart. Slices may lack labels.")
+
+            if title:
+                chart_obj.title = title
+            # x_axis_label and y_axis_label are not typically applicable to Pie charts.
+
+        if chart_obj:
+            chart_obj.width = chart_width
+            chart_obj.height = chart_height
+            self.worksheet.add_chart(chart_obj, cell_anchor)
+            return chart_obj
+        else:
+            # This case should not be reached if initial validation for supported types is exhaustive
+            # and all supported types have their logic implemented.
+            print(f"Warning: Chart type '{chart_type}' passed validation but was not constructed.") # Should use original chart_type for warning
+            return None

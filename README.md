@@ -532,3 +532,61 @@ excel_workbook.save(output_excel_file)
 
 print(f"Excel report saved as {output_excel_file}")
 ```
+
+#### Adding Charts (`pyxlsx`)
+
+You can add charts to your worksheets using the `worksheet.add_chart()` method. This allows you to visualize data directly within your Excel files.
+
+Key parameters for `add_chart()`:
+*   `chart_type`: String specifying the type of chart (e.g., `CHART_TYPE_COLUMN`, `CHART_TYPE_LINE`). Use constants imported from `pyxlsx`.
+*   `cell_anchor`: String, the cell where the top-left corner of the chart will be placed (e.g., "E2").
+*   `series_data_range`: Tuple `(min_row, min_col, max_row, max_col)` defining the range of data for the chart series.
+*   `category_labels_range`: Tuple `(min_row, min_col, max_row, max_col)` defining the range for category axis labels.
+*   `title`: String, the title of the chart.
+*   Optional: `x_axis_label`, `y_axis_label`, `chart_width`, `chart_height`.
+
+**Example: Adding a Column Chart**
+
+```python
+from pyxlsx import PyWorkbook, CHART_TYPE_COLUMN # Import necessary items
+# Assuming 'excel_workbook' is an existing PyWorkbook instance from previous example
+# and 'worksheet_one' is a PyWorksheet instance (e.g., from excel_workbook.add_worksheet())
+
+# Add some data for the chart
+worksheet_one.write_cell(row=10, col=1, value="Product")
+worksheet_one.write_cell(row=11, col=1, value="Alpha")
+worksheet_one.write_cell(row=12, col=1, value="Beta")
+worksheet_one.write_cell(row=13, col=1, value="Gamma")
+
+worksheet_one.write_cell(row=10, col=2, value="Q1 Sales")
+worksheet_one.write_cell(row=11, col=2, value=150)
+worksheet_one.write_cell(row=12, col=2, value=200)
+worksheet_one.write_cell(row=13, col=2, value=120)
+
+worksheet_one.write_cell(row=10, col=3, value="Q2 Sales")
+worksheet_one.write_cell(row=11, col=3, value=180)
+worksheet_one.write_cell(row=12, col=3, value=240)
+worksheet_one.write_cell(row=13, col=3, value=150)
+
+# Add a column chart
+worksheet_one.add_chart(
+    chart_type=CHART_TYPE_COLUMN,
+    cell_anchor="A15", # Anchor chart below the data
+    series_data_range=(10, 2, 13, 3),  # Q1 and Q2 Sales data (incl. headers)
+    category_labels_range=(11, 1, 13, 1), # Product names
+    title="Quarterly Sales Performance",
+    x_axis_label="Products",
+    y_axis_label="Sales Figures"
+)
+
+# Re-save the workbook to include the chart
+excel_workbook.save("sample_sales_report_with_chart.xlsx")
+# (Or use the same filename to overwrite)
+print("Workbook saved with chart as sample_sales_report_with_chart.xlsx")
+```
+
+Currently supported chart types:
+*   `CHART_TYPE_BAR`
+*   `CHART_TYPE_COLUMN`
+*   `CHART_TYPE_LINE`
+*   `CHART_TYPE_PIE`
