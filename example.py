@@ -513,3 +513,77 @@ print(f"Please open '{output_filename}' and '{updated_output_filename}' to view 
 #     print("Error: 'existing_example.pptx' not found. Please create it to run this part of the example.")
 # except Exception as e:
 #     print(f"Error in opening/modifying existing presentation example: {e}")
+
+
+# --- PyXLSX Example ---
+print("\n\n--- PyXLSX Example ---")
+try:
+    from pyxlsx import PyWorkbook # Ensure this import is here, pandas is already imported above
+
+    # Create a sample DataFrame for Excel
+    excel_data = {
+        'EmployeeID': [1001, 1002, 1003, 1004, 1005],
+        'Name': ['Alice Smith', 'Bob Johnson', 'Charlie Brown', 'Diana Prince', 'Edward Scissorhands'],
+        'Department': ['Engineering', 'Marketing', 'Sales', 'HR', 'Special Projects'],
+        'Salary': [90000, 75000, 68000, 72000, 150000],
+        'HireDate': pd.to_datetime(['2020-01-15', '2019-05-20', '2021-08-01', '2018-11-10', '2017-03-01'])
+    }
+    employee_df = pd.DataFrame(excel_data)
+    print("\nSample Employee DataFrame created for Excel example:")
+    print(employee_df)
+
+    # Create a new PyWorkbook instance
+    xlsx_workbook = PyWorkbook()
+    print("\nCreated PyWorkbook for Excel.")
+
+    # Add a worksheet
+    emp_worksheet = xlsx_workbook.add_worksheet(title="Employee Data")
+    print(f"Added worksheet titled: '{emp_worksheet.worksheet.title}'") # Accessing underlying openpyxl title for now
+
+    # Define formatting for the DataFrame
+    header_format = {
+        'header_font_bold': True,
+        'header_fill_color': "C9DAF8" # A light blue
+    }
+    data_formats = {
+        'Salary': '$#,##0', # Currency format
+        'HireDate': 'yyyy-mm-dd'
+    }
+    column_widths_config = {
+        'A': 12, # EmployeeID
+        'B': 25, # Name
+        'C': 18, # Department
+        'D': 15, # Salary
+        'E': 15  # HireDate
+    }
+
+    # Write the DataFrame to the worksheet
+    print("Writing DataFrame to worksheet with formatting...")
+    emp_worksheet.write_dataframe(
+        employee_df,
+        start_row=1,
+        start_col=1,
+        header=True,
+        include_index=False,
+        number_formats=data_formats,
+        column_widths=column_widths_config,
+        **header_format
+    )
+
+    # Example of writing a single cell with specific styling
+    summary_row = len(employee_df) + 3
+    emp_worksheet.write_cell(summary_row, 1, "Total Employees:", font_bold=True, align_horizontal='right')
+    emp_worksheet.write_cell(summary_row, 2, len(employee_df))
+    print("DataFrame and summary cells written to worksheet.")
+
+    # Save the workbook
+    excel_output_filename = "example_excel_output.xlsx"
+    xlsx_workbook.save(excel_output_filename)
+    print(f"Excel workbook saved as {excel_output_filename}")
+
+except ImportError:
+    print("\nCould not import PyWorkbook from pyxlsx. Skipping PyXLSX example.")
+except Exception as e:
+    print(f"\nAn error occurred during the PyXLSX example: {e}")
+
+print("\n--- example.py script finished ---")

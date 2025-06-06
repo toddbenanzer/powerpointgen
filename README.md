@@ -10,14 +10,16 @@ To install the necessary dependencies, run:
 ```bash
 pip install -r requirements.txt
 ```
+(Ensure `requirements.txt` includes `python-pptx` for PowerPoint features and `openpyxl`, `pandas` for Excel features if used.)
 
-**Note on Importing Enums:**
+
+**Note on Importing Enums (for `pypptx`):**
 Common `python-pptx` enums needed for certain operations, like `MSO_SHAPE` (for adding shapes), `XL_CHART_TYPE` (for adding charts), and `PP_PLACEHOLDER` (relevant for understanding slide structure if customizing layouts or dealing with placeholders directly), are re-exported for convenience from the `pypptx` package:
 ```python
 from pypptx import PyPPT, PySlide, MSO_SHAPE, XL_CHART_TYPE, PP_PLACEHOLDER
 ```
 
-### Basic Usage
+### Basic Usage (`pypptx`)
 
 Here's how to create a new presentation, add a slide, and save it:
 
@@ -85,7 +87,7 @@ from pypptx import PyPPT
 # preso_wrapper_existing.save("existing_presentation_modified.pptx")
 ```
 
-### Text Manipulation
+### Text Manipulation (`pypptx`)
 
 The `PyPPT` allows access to `PySlide` objects, which provide methods to add and modify various text elements on your slides.
 
@@ -164,7 +166,7 @@ else:
     print("No slides to add bullet points to.")
 ```
 
-### Adding Pandas DataFrames as Tables
+### Adding Pandas DataFrames as Tables (`pypptx`)
 
 The `PySlide` class provides a method to easily insert a Pandas DataFrame as a table onto a slide, with options for custom column names and number formatting.
 
@@ -257,7 +259,7 @@ except Exception as e:
 
 The method returns the `GraphicFrame` object representing the table.
 
-### Adding and Styling Basic Shapes
+### Adding and Styling Basic Shapes (`pypptx`)
 
 You can add various predefined shapes to your slides and apply basic styling.
 
@@ -317,7 +319,7 @@ The `shape_ref` argument in styling methods can be:
 *   `set_shape_line_color(shape_ref, r, g, b)`
 *   `set_shape_line_weight(shape_ref, weight_pt)`
 
-### Adding Charts
+### Adding Charts (`pypptx`)
 
 You can add common chart types like line and bar charts to your slides using data from Python dictionaries.
 
@@ -397,7 +399,7 @@ except ValueError as e:
     print(f"Error adding column chart: {e}")
 ```
 
-### Presentation and Slide Management
+### Presentation and Slide Management (`pypptx`)
 
 The `PyPPT` object provides methods to manage slides within the presentation.
 
@@ -452,3 +454,81 @@ This is a basic implementation and does *not* perform a perfect, deep copy.
 *   It tries to copy basic auto-shapes (like rectangles, ovals, lines) and their text, position, and size.
 *   **It does NOT copy**: Complex shape formatting, tables, charts, images, grouped shapes, animations, transitions, or slide master details.
 *   For a true clone, more advanced manipulation of the underlying presentation XML would be needed, which is beyond the scope of this basic function.
+
+
+## `pyxlsx` - Excel Document Manipulation
+
+A library for creating and editing Excel (.xlsx) files, with a focus on easily writing pandas DataFrames and applying formatting. It wraps the `openpyxl` library to provide a simplified interface for common tasks.
+
+### Installation Note
+
+The `pyxlsx` module requires `openpyxl` and `pandas`. These should be included in your `requirements.txt` file if you are using the Excel functionalities. The main installation command remains:
+```bash
+pip install -r requirements.txt
+```
+
+### Basic Usage (`pyxlsx`)
+
+Here's how to create a new Excel workbook, add a worksheet, write a DataFrame to it with some basic formatting, and save it:
+
+```python
+import pandas as pd
+from pyxlsx import PyWorkbook # Assuming PyWorkbook is exported from pyxlsx via __init__.py
+
+# Create a sample DataFrame
+data = {
+    'ProductID': [101, 102, 103, 104],
+    'ProductName': ['Gizmo', 'Widget', 'Thingamajig', 'Doodad'],
+    'Category': ['A', 'B', 'A', 'C'],
+    'Price': [19.99, 25.50, 9.75, 12.00],
+    'Quantity': [100, 150, 80, 200]
+}
+sales_df = pd.DataFrame(data)
+
+# Create a new PyWorkbook
+excel_workbook = PyWorkbook()
+
+# Add a worksheet
+worksheet_one = excel_workbook.add_worksheet(title="Sales Data")
+
+# Define some basic formatting
+header_styling = {
+    'header_font_bold': True,
+    'header_fill_color': "E0E0E0" # A light grey
+}
+column_formatting = {
+    'Price': '"$"#,##0.00', # Currency format
+    'Quantity': '#,##0'      # Integer with comma
+}
+column_width_settings = {
+    'A': 12, # ProductID
+    'B': 20, # ProductName
+    'C': 10, # Category
+    'D': 12, # Price
+    'E': 10  # Quantity
+}
+
+# Write the DataFrame to the worksheet
+worksheet_one.write_dataframe(
+    sales_df,
+    start_row=1,
+    start_col=1,
+    header=True,
+    include_index=False, # Don't write DataFrame index
+    number_formats=column_formatting,
+    column_widths=column_width_settings,
+    **header_styling
+    # Other options include: font_name, font_size, data_alignment_horizontal, etc.
+)
+
+# Add a single styled cell
+worksheet_one.write_cell(row=len(sales_df) + 3, col=1, value="Report Generated:", font_bold=True)
+worksheet_one.write_cell(row=len(sales_df) + 3, col=2, value="Timestamp_placeholder", font_italic=True)
+
+
+# Save the workbook
+output_excel_file = "sample_sales_report.xlsx"
+excel_workbook.save(output_excel_file)
+
+print(f"Excel report saved as {output_excel_file}")
+```
