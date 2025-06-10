@@ -8,7 +8,14 @@ from pptx.dml.color import RGBColor
 import pandas as pd
 
 # Import constants from within the pypptx package
-from .constants import DEFAULT_TABLE_HEADER_BOLD, DEFAULT_TABLE_INCLUDE_INDEX
+from .constants import (
+    DEFAULT_TABLE_HEADER_BOLD,
+    DEFAULT_TABLE_INCLUDE_INDEX,
+    DEFAULT_SUBTITLE_FONT_NAME,
+    DEFAULT_SUBTITLE_FONT_SIZE_PT,
+    DEFAULT_FOOTER_FONT_NAME,
+    DEFAULT_FOOTER_FONT_SIZE_PT,
+)
 
 class PySlide:
     def __init__(self, pptx_slide):
@@ -50,6 +57,10 @@ class PySlide:
 
         if subtitle_shape:
             subtitle_shape.text = text
+            text_frame = subtitle_shape.text_frame
+            for paragraph in text_frame.paragraphs:
+                paragraph.font.name = DEFAULT_SUBTITLE_FONT_NAME
+                paragraph.font.size = Pt(DEFAULT_SUBTITLE_FONT_SIZE_PT)
         else:
             raise AttributeError("This slide does not have a clear subtitle placeholder.")
 
@@ -70,6 +81,10 @@ class PySlide:
 
         if footer_shape:
             footer_shape.text = text
+            text_frame = footer_shape.text_frame
+            for paragraph in text_frame.paragraphs:
+                paragraph.font.name = DEFAULT_FOOTER_FONT_NAME
+                paragraph.font.size = Pt(DEFAULT_FOOTER_FONT_SIZE_PT)
         else:
             raise AttributeError("This slide does not have a footer placeholder.")
 
